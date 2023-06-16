@@ -10,7 +10,6 @@ from fastapi.security import HTTPBearer
 from fastapi.security import OAuth2
 from fastapi.security.base import SecurityBase
 from fastapi.security.utils import get_authorization_scheme_param
-from fastapi_sso.sso.github import GithubSSO
 from jose import jwt
 from pydantic import BaseModel
 from starlette.requests import Request
@@ -18,6 +17,7 @@ from starlette.status import HTTP_403_FORBIDDEN
 
 from config import CLIENT_ID, CLIENT_SECRET, redirect_url, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, \
     redirect_url_main_page
+from fastapi_sso.github import GithubSSO
 
 router = APIRouter()
 

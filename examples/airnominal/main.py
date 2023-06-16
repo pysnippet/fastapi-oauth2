@@ -1,27 +1,44 @@
-import influxdb_client
-from fastapi import FastAPI
-from influxdb_client.client.write_api import SYNCHRONOUS
+import jwt
+from fastapi import FastAPI, Request, APIRouter
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from starlette.authentication import AuthenticationBackend
+from starlette.middleware.authentication import AuthenticationMiddleware
 
 from auth import router as auth_router
-from config import api_root_path
+from config import api_root_path, SECRET_KEY, ALGORITHM
 from data_endpoint import router as data_router
 from register import router as register_router
 
-# config for influx-db
-bucket = "Airnominal-data2"
-org = "Airnominal"
-token = "DFUh1vGGeC2UHrAY8UW-t_3ylXa5LLo7mID-vaZ8UFgaggNjqRpz_lxmNErbazdJQA7q_F8stomdWK_YVHaE1A=="
-url = "http://192.168.64.10:8086"
+router = APIRouter()
+templates = Jinja2Templates(directory="templates")
 
-client = influxdb_client.InfluxDBClient(
-    url=url,
-    token=token,
-    org=org
-)
 
-write_api = client.write_api(write_options=SYNCHRONOUS)
+@router.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request, "user": request.user})
+
 
 app = FastAPI(root_path=api_root_path)
+app.include_router(router)
 app.include_router(auth_router)
 app.include_router(register_router)
 app.include_router(data_router)
+
+
+class BearerTokenAuthBackend(AuthenticationBackend):
+    async def authenticate(self, request):
+        authorization = request.cookies.get("Authorization")
+
+        if not authorization:
+            return "", None
+
+        access_token = authorization.split(" ")[1]
+        user = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        return authorization, user
+
+
+@app.on_event('startup')
+async def startup():
+    app.add_middleware(AuthenticationMiddleware, backend=BearerTokenAuthBackend())
