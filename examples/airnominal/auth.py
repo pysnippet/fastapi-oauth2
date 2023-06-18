@@ -8,11 +8,9 @@ from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPBearer
 from fastapi.security import OAuth2
-from fastapi.security.base import SecurityBase
 from fastapi.security.utils import get_authorization_scheme_param
 from jose import jwt
 from jwt import PyJWTError
-from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.status import HTTP_403_FORBIDDEN
 
@@ -44,26 +42,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    username: str = None
-
-
-class User(BaseModel):
-    username: str
-    email: str = None
-    full_name: str = None
-    disabled: bool = None
-
-
-class UserInDB(User):
-    hashed_password: str
 
 
 class OAuth2PasswordBearerCookie(OAuth2):
@@ -113,37 +91,26 @@ class OAuth2PasswordBearerCookie(OAuth2):
         return param
 
 
-class BasicAuth(SecurityBase):
-    def __init__(self, scheme_name: str = None, auto_error: bool = True):
-        self.scheme_name = scheme_name or self.__class__.__name__
-        self.auto_error = auto_error
-
-    async def __call__(self, request: Request) -> Optional[str]:
-        authorization: str = request.headers.get("Authorization")
-        scheme, param = get_authorization_scheme_param(authorization)
-        if not authorization or scheme.lower() != "basic":
-            if self.auto_error:
-                raise HTTPException(
-                    status_code=HTTP_403_FORBIDDEN, detail="Not authenticated"
-                )
-            else:
-                return None
-        return param
-
-
-basic_auth = BasicAuth(auto_error=False)
-
 oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="/token")
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=HTTP_403_FORBIDDEN, detail="Could not validate credentials"
-    )
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except PyJWTError:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=HTTP_403_FORBIDDEN, detail="Could not validate credentials"
+        )
+
+
+@router.get("/user")
+def user(current_user=Depends(get_current_user)):
+    return current_user
+
+
+@router.post("/token")
+def token(request: Request):
+    return request.cookies.get("Authorization")
 
 
 @router.get("/auth/login")
@@ -176,11 +143,3 @@ async def auth_logout():
     response = RedirectResponse(redirect_url_main_page)
     response.delete_cookie("Authorization")
     return response
-
-
-@router.get("/auth/status")
-async def auth_status(user=Depends(get_current_user)):
-    return {
-        "ok": True,
-        "user": user,
-    }

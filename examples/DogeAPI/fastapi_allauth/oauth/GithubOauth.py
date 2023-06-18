@@ -37,7 +37,6 @@ class GithubOauth(BaseOauth):
     def get_userinfo(self, access_token: str):
         response = requests.get(USER_INFO_URL, headers={
             "authorization": f"Bearer {access_token}"})
-        print("response", response.text)
         return response.json()
 
     def get_open_id(self, user_json: dict):

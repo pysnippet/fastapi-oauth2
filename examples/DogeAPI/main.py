@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.responses import HTMLResponse
@@ -14,7 +14,7 @@ from models.models import User
 
 models.Base.metadata.create_all(bind=engine)
 
-allauthManager = AllauthManager(db=next(get_db()), user=User, secret="secret", lifetime_second=3600)
+allauthManager = AllauthManager(db=Depends(get_db), user=User, secret="secret", lifetime_second=3600)
 githubOauth = GithubOauth(
     client_id="eccd08d6736b7999a32a",
     client_secret="642999c1c5f2b3df8b877afdc78252ef5b594d31",

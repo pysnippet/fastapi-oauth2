@@ -81,7 +81,6 @@ class BaseOauth:
 
         response = requests.post(
             self.access_token_url, data=data, headers=self.request_header)
-        print("response = ", response.text)
         if response.status_code >= 400:
             raise Exception(response.text)
 
