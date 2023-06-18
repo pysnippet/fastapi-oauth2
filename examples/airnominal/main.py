@@ -6,9 +6,7 @@ from starlette.authentication import AuthenticationBackend
 from starlette.middleware.authentication import AuthenticationMiddleware
 
 from auth import router as auth_router
-from config import api_root_path, SECRET_KEY, ALGORITHM
-from data_endpoint import router as data_router
-from register import router as register_router
+from config import SECRET_KEY, ALGORITHM
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -19,11 +17,9 @@ async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "user": request.user})
 
 
-app = FastAPI(root_path=api_root_path)
+app = FastAPI()
 app.include_router(router)
 app.include_router(auth_router)
-app.include_router(register_router)
-app.include_router(data_router)
 
 
 class BearerTokenAuthBackend(AuthenticationBackend):

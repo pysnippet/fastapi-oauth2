@@ -11,6 +11,7 @@ from fastapi.security import OAuth2
 from fastapi.security.base import SecurityBase
 from fastapi.security.utils import get_authorization_scheme_param
 from jose import jwt
+from jwt import PyJWTError
 from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.status import HTTP_403_FORBIDDEN
@@ -140,8 +141,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         status_code=HTTP_403_FORBIDDEN, detail="Could not validate credentials"
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except PyJWTError:
         raise credentials_exception
 
@@ -160,7 +160,6 @@ async def auth_callback(request: Request):
     access_token = create_access_token(
         data=dict(user), expires_delta=access_token_expires
     )
-    print(dict(user))
     response = RedirectResponse(redirect_url_main_page)
     response.set_cookie(
         "Authorization",
