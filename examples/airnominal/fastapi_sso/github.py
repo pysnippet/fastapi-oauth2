@@ -1,10 +1,10 @@
-"""Github SSO Oauth Helper class"""
+"""GitHub SSO Oauth Helper class"""
 
-from .base import DiscoveryDocument, OpenID, SSOBase
+from .base import DiscoveryDocument, SSOBase
 
 
 class GithubSSO(SSOBase):
-    """Class providing login via Github SSO"""
+    """Class providing login via GitHub SSO"""
 
     provider = "github"
     scope = ["user:email"]
@@ -18,11 +18,5 @@ class GithubSSO(SSOBase):
         }
 
     @classmethod
-    async def openid_from_response(cls, response: dict) -> OpenID:
-        return OpenID(
-            email=response["email"],
-            provider=cls.provider,
-            id=response["id"],
-            display_name=response["login"],
-            picture=response["avatar_url"],
-        )
+    async def openid_from_response(cls, response: dict) -> dict:
+        return {**response, "provider": cls.provider}

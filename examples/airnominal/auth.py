@@ -20,7 +20,7 @@ from fastapi_sso.github import GithubSSO
 
 router = APIRouter()
 
-# config for github SSO
+# config for GitHub SSO
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 sso = GithubSSO(

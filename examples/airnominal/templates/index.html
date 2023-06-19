@@ -9,8 +9,8 @@
 </head>
 <body>
 {% if request.user %}
-    <h1>Hello, {{ request.user.display_name }}</h1>
-    <img src="{{ request.user.picture }}" alt="Pic">
+    <h1>Hello, {{ request.user.name }}</h1>
+    <img src="{{ request.user.avatar_url }}" alt="Pic">
     <a href="/auth/logout">Logout</a>
 {% else %}
     <a href="/auth/login">Sign in</a>

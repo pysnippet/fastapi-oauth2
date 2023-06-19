@@ -1,6 +1,4 @@
-"""SSO login base dependency
-"""
-# pylint: disable=too-few-public-methods
+"""SSO login base dependency"""
 
 import json
 import sys
@@ -8,7 +6,6 @@ import warnings
 from typing import Any, Dict, List, Optional
 
 import httpx
-import pydantic
 from oauthlib.oauth2 import WebApplicationClient
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
@@ -34,19 +31,6 @@ class SSOLoginError(HTTPException):
     """
 
 
-class OpenID(pydantic.BaseModel):  # pylint: disable=no-member
-    """Class (schema) to represent information got from sso provider in a common form."""
-
-    id: Optional[str] = None
-    email: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    display_name: Optional[str] = None
-    picture: Optional[str] = None
-    provider: Optional[str] = None
-
-
-# pylint: disable=too-many-instance-attributes
 class SSOBase:
     """Base class (mixin) for all SSO providers"""
 
@@ -59,15 +43,14 @@ class SSOBase:
     additional_headers: Optional[Dict[str, Any]] = None
 
     def __init__(
-        self,
-        client_id: str,
-        client_secret: str,
-        redirect_uri: Optional[str] = None,
-        allow_insecure_http: bool = False,
-        use_state: bool = False,
-        scope: Optional[List[str]] = None,
+            self,
+            client_id: str,
+            client_secret: str,
+            redirect_uri: Optional[str] = None,
+            allow_insecure_http: bool = False,
+            use_state: bool = False,
+            scope: Optional[List[str]] = None,
     ):
-        # pylint: disable=too-many-arguments
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
@@ -116,8 +99,8 @@ class SSOBase:
         return self._refresh_token or self.oauth_client.refresh_token
 
     @classmethod
-    async def openid_from_response(cls, response: dict) -> OpenID:
-        """Return {OpenID} object from provider's user info endpoint response"""
+    async def openid_from_response(cls, response: dict) -> dict:
+        """Return {dict} object from provider's user info endpoint response"""
         raise NotImplementedError(f"Provider {cls.provider} not supported")
 
     async def get_discovery_document(self) -> DiscoveryDocument:
@@ -143,11 +126,11 @@ class SSOBase:
         return discovery.get("userinfo_endpoint")
 
     async def get_login_url(
-        self,
-        *,
-        redirect_uri: Optional[str] = None,
-        params: Optional[Dict[str, Any]] = None,
-        state: Optional[str] = None,
+            self,
+            *,
+            redirect_uri: Optional[str] = None,
+            params: Optional[Dict[str, Any]] = None,
+            state: Optional[str] = None,
     ) -> str:
         """Return prepared login url. This is low-level, see {get_login_redirect} instead."""
         params = params or {}
@@ -160,11 +143,11 @@ class SSOBase:
         return request_uri
 
     async def get_login_redirect(
-        self,
-        *,
-        redirect_uri: Optional[str] = None,
-        params: Optional[Dict[str, Any]] = None,
-        state: Optional[str] = None,
+            self,
+            *,
+            redirect_uri: Optional[str] = None,
+            params: Optional[Dict[str, Any]] = None,
+            state: Optional[str] = None,
     ) -> RedirectResponse:
         """Return redirect response by Stalette to login page of Oauth SSO provider
 
@@ -182,13 +165,13 @@ class SSOBase:
         return response
 
     async def verify_and_process(
-        self,
-        request: Request,
-        *,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None,
-        redirect_uri: Optional[str] = None,
-    ) -> Optional[OpenID]:
+            self,
+            request: Request,
+            *,
+            params: Optional[Dict[str, Any]] = None,
+            headers: Optional[Dict[str, Any]] = None,
+            redirect_uri: Optional[str] = None,
+    ) -> Optional[dict]:
         """Get FastAPI (Starlette) Request object and process login.
         This handler should be used for your /callback path.
 
@@ -197,7 +180,7 @@ class SSOBase:
             params {Optional[Dict[str, Any]]} -- Optional additional query parameters to pass to the provider
 
         Returns:
-            Optional[OpenID] -- OpenID if the login was successfull
+            Optional[dict] -- dict if the login was successfully
         """
         headers = headers or {}
         code = request.query_params.get("code")
@@ -209,14 +192,14 @@ class SSOBase:
         )
 
     async def process_login(
-        self,
-        code: str,
-        request: Request,
-        *,
-        params: Optional[Dict[str, Any]] = None,
-        additional_headers: Optional[Dict[str, Any]] = None,
-        redirect_uri: Optional[str] = None,
-    ) -> Optional[OpenID]:
+            self,
+            code: str,
+            request: Request,
+            *,
+            params: Optional[Dict[str, Any]] = None,
+            additional_headers: Optional[Dict[str, Any]] = None,
+            redirect_uri: Optional[str] = None,
+    ) -> Optional[dict]:
         """This method should be called from callback endpoint to verify the user and request user info endpoint.
         This is low level, you should use {verify_and_process} instead.
 
@@ -224,7 +207,6 @@ class SSOBase:
             params {Optional[Dict[str, Any]]} -- Optional additional query parameters to pass to the provider
             additional_headers {Optional[Dict[str, Any]]} -- Optional additional headers to be added to all requests
         """
-        # pylint: disable=too-many-locals
         params = params or {}
         additional_headers = additional_headers or {}
         additional_headers.update(self.additional_headers or {})
