@@ -1,47 +1,14 @@
-import os
-from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter
 from fastapi import Depends, HTTPException
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
-from fastapi.responses import RedirectResponse
-from fastapi.security import HTTPBearer
 from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
-from jose import jwt
-from jwt import PyJWTError
+from jose import jwt, JWTError
 from starlette.requests import Request
 from starlette.status import HTTP_403_FORBIDDEN
 
-from config import CLIENT_ID, CLIENT_SECRET, redirect_url, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, \
-    redirect_url_main_page
-from fastapi_sso.github import GithubSSO
-
-router = APIRouter()
-
-# config for GitHub SSO
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
-sso = GithubSSO(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    redirect_uri=redirect_url,
-    allow_insecure_http=True,
-)
-
-security = HTTPBearer()
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+from .config import SECRET_KEY, ALGORITHM
 
 
 class OAuth2PasswordBearerCookie(OAuth2):
@@ -80,6 +47,8 @@ class OAuth2PasswordBearerCookie(OAuth2):
 
         else:
             authorization = False
+            scheme = ""
+            param = ""
 
         if not authorization or scheme.lower() != "bearer":
             if self.auto_error:
@@ -97,49 +66,7 @@ oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="/token")
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except PyJWTError:
+    except JWTError:
         raise HTTPException(
             status_code=HTTP_403_FORBIDDEN, detail="Could not validate credentials"
         )
-
-
-@router.get("/user")
-def user(current_user=Depends(get_current_user)):
-    return current_user
-
-
-@router.post("/token")
-def token(request: Request):
-    return request.cookies.get("Authorization")
-
-
-@router.get("/auth/login")
-async def auth_init():
-    """Initialize auth and redirect"""
-    return await sso.get_login_redirect()
-
-
-@router.get("/auth/callback")
-async def auth_callback(request: Request):
-    """Verify login"""
-    user = await sso.verify_and_process(request)
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data=dict(user), expires_delta=access_token_expires
-    )
-    response = RedirectResponse(redirect_url_main_page)
-    response.set_cookie(
-        "Authorization",
-        value=f"Bearer {access_token}",
-        httponly=True,
-        max_age=1800,
-        expires=1800,
-    )
-    return response
-
-
-@router.get("/auth/logout")
-async def auth_logout():
-    response = RedirectResponse(redirect_url_main_page)
-    response.delete_cookie("Authorization")
-    return response

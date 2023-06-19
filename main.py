@@ -1,3 +1,5 @@
+import json
+
 import jwt
 from fastapi import FastAPI, Request, APIRouter
 from fastapi.responses import HTMLResponse
@@ -5,8 +7,8 @@ from fastapi.templating import Jinja2Templates
 from starlette.authentication import AuthenticationBackend
 from starlette.middleware.authentication import AuthenticationMiddleware
 
-from auth import router as auth_router
-from config import SECRET_KEY, ALGORITHM
+from demo.config import SECRET_KEY, ALGORITHM
+from demo.router import router as auth_router
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -14,7 +16,7 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/", response_class=HTMLResponse)
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "user": request.user})
+    return templates.TemplateResponse("index.html", {"request": request, "user": request.user, "json": json})
 
 
 app = FastAPI()

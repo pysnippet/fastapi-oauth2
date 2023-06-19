@@ -1,5 +1,3 @@
-"""GitHub SSO Oauth Helper class"""
-
 from .base import DiscoveryDocument, SSOBase
 
 

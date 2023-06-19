@@ -1,6 +1,5 @@
-"""SSO login base dependency"""
-
 import json
+import os
 import sys
 import warnings
 from typing import Any, Dict, List, Optional
@@ -26,7 +25,7 @@ class UnsetStateWarning(UserWarning):
 
 
 class SSOLoginError(HTTPException):
-    """Raised when any login-related error ocurrs
+    """Raised when any login-related error occurs
     (such as when user is not verified or if there was an attempt for fake login)
     """
 
@@ -55,6 +54,8 @@ class SSOBase:
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
         self.allow_insecure_http = allow_insecure_http
+        if allow_insecure_http:
+            os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         # TODO: Remove use_state argument and attribute
         if use_state:
             warnings.warn(
@@ -131,16 +132,15 @@ class SSOBase:
             redirect_uri: Optional[str] = None,
             params: Optional[Dict[str, Any]] = None,
             state: Optional[str] = None,
-    ) -> str:
+    ) -> Any:
         """Return prepared login url. This is low-level, see {get_login_redirect} instead."""
         params = params or {}
         redirect_uri = redirect_uri or self.redirect_uri
         if redirect_uri is None:
             raise ValueError("redirect_uri must be provided, either at construction or request time")
-        request_uri = self.oauth_client.prepare_request_uri(
+        return self.oauth_client.prepare_request_uri(
             await self.authorization_endpoint, redirect_uri=redirect_uri, state=state, scope=self.scope, **params
         )
-        return request_uri
 
     async def get_login_redirect(
             self,
@@ -149,7 +149,7 @@ class SSOBase:
             params: Optional[Dict[str, Any]] = None,
             state: Optional[str] = None,
     ) -> RedirectResponse:
-        """Return redirect response by Stalette to login page of Oauth SSO provider
+        """Return redirect response by Starlette to login page of Oauth SSO provider
 
         Arguments:
             redirect_uri {Optional[str]} -- Override redirect_uri specified on this instance (default: None)
@@ -225,7 +225,7 @@ class SSOBase:
             redirect_url=redirect_uri or self.redirect_uri or current_path,
             code=code,
             **params,
-        )  # type: ignore
+        )
 
         if token_url is None:
             return None
