@@ -1,4 +1,4 @@
-from .base import DiscoveryDocument, SSOBase
+from .base import SSOBase
 
 
 class GithubSSO(SSOBase):
@@ -8,13 +8,6 @@ class GithubSSO(SSOBase):
     scope = ["user:email"]
     additional_headers = {"accept": "application/json"}
 
-    async def get_discovery_document(self) -> DiscoveryDocument:
-        return {
-            "authorization_endpoint": "https://github.com/login/oauth/authorize",
-            "token_endpoint": "https://github.com/login/oauth/access_token",
-            "userinfo_endpoint": "https://api.github.com/user",
-        }
-
-    @classmethod
-    async def openid_from_response(cls, response: dict) -> dict:
-        return {**response, "provider": cls.provider}
+    authorization_endpoint = "https://github.com/login/oauth/authorize"
+    token_endpoint = "https://github.com/login/oauth/access_token"
+    userinfo_endpoint = "https://api.github.com/user"

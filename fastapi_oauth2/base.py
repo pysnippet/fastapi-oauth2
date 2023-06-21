@@ -1,7 +1,5 @@
 import json
 import os
-import sys
-import warnings
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -9,15 +7,6 @@ from oauthlib.oauth2 import WebApplicationClient
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
-
-if sys.version_info >= (3, 8):
-    from typing import TypedDict
-else:
-    from typing_extensions import TypedDict
-
-DiscoveryDocument = TypedDict(
-    "DiscoveryDocument", {"authorization_endpoint": str, "token_endpoint": str, "userinfo_endpoint": str}
-)
 
 
 class UnsetStateWarning(UserWarning):
@@ -41,13 +30,16 @@ class SSOBase:
     _oauth_client: Optional[WebApplicationClient] = None
     additional_headers: Optional[Dict[str, Any]] = None
 
+    authorization_endpoint: str = NotImplemented
+    token_endpoint: str = NotImplemented
+    userinfo_endpoint: str = NotImplemented
+
     def __init__(
             self,
             client_id: str,
             client_secret: str,
             redirect_uri: Optional[str] = None,
             allow_insecure_http: bool = False,
-            use_state: bool = False,
             scope: Optional[List[str]] = None,
     ):
         self.client_id = client_id
@@ -56,33 +48,11 @@ class SSOBase:
         self.allow_insecure_http = allow_insecure_http
         if allow_insecure_http:
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-        # TODO: Remove use_state argument and attribute
-        if use_state:
-            warnings.warn(
-                (
-                    "Argument 'use_state' of SSOBase's constructor is deprecated and will be removed in "
-                    "future releases. Use 'state' argument of individual methods instead."
-                ),
-                DeprecationWarning,
-            )
         self.scope = scope or self.scope
-        self._refresh_token: Optional[str] = None
-        self._state: Optional[str] = None
-
-    @property
-    def state(self) -> Optional[str]:
-        """Gets state as it was returned from the server"""
-        if self._state is None:
-            warnings.warn(
-                "'state' parameter is unset. This means the server either "
-                "didn't return state (was this expected?) or 'verify_and_process' hasn't been called yet.",
-                UnsetStateWarning,
-            )
-        return self._state
+        self.state: Optional[str] = None
 
     @property
     def oauth_client(self) -> WebApplicationClient:
-        """OAuth Client to help us generate requests and parse responses"""
         if self.client_id == NotImplemented:
             raise NotImplementedError(f"Provider {self.provider} not supported")
         if self._oauth_client is None:
@@ -91,40 +61,15 @@ class SSOBase:
 
     @property
     def access_token(self) -> Optional[str]:
-        """Access token from token endpoint"""
         return self.oauth_client.access_token
 
     @property
     def refresh_token(self) -> Optional[str]:
-        """Get refresh token (if returned from provider)"""
-        return self._refresh_token or self.oauth_client.refresh_token
+        return self.oauth_client.refresh_token
 
     @classmethod
     async def openid_from_response(cls, response: dict) -> dict:
-        """Return {dict} object from provider's user info endpoint response"""
         raise NotImplementedError(f"Provider {cls.provider} not supported")
-
-    async def get_discovery_document(self) -> DiscoveryDocument:
-        """Get discovery document containing handy urls"""
-        raise NotImplementedError(f"Provider {self.provider} not supported")
-
-    @property
-    async def authorization_endpoint(self) -> Optional[str]:
-        """Return `authorization_endpoint` from discovery document"""
-        discovery = await self.get_discovery_document()
-        return discovery.get("authorization_endpoint")
-
-    @property
-    async def token_endpoint(self) -> Optional[str]:
-        """Return `token_endpoint` from discovery document"""
-        discovery = await self.get_discovery_document()
-        return discovery.get("token_endpoint")
-
-    @property
-    async def userinfo_endpoint(self) -> Optional[str]:
-        """Return `userinfo_endpoint` from discovery document"""
-        discovery = await self.get_discovery_document()
-        return discovery.get("userinfo_endpoint")
 
     async def get_login_url(
             self,
@@ -133,13 +78,12 @@ class SSOBase:
             params: Optional[Dict[str, Any]] = None,
             state: Optional[str] = None,
     ) -> Any:
-        """Return prepared login url. This is low-level, see {get_login_redirect} instead."""
         params = params or {}
         redirect_uri = redirect_uri or self.redirect_uri
         if redirect_uri is None:
             raise ValueError("redirect_uri must be provided, either at construction or request time")
         return self.oauth_client.prepare_request_uri(
-            await self.authorization_endpoint, redirect_uri=redirect_uri, state=state, scope=self.scope, **params
+            self.authorization_endpoint, redirect_uri=redirect_uri, state=state, scope=self.scope, **params
         )
 
     async def get_login_redirect(
@@ -149,20 +93,8 @@ class SSOBase:
             params: Optional[Dict[str, Any]] = None,
             state: Optional[str] = None,
     ) -> RedirectResponse:
-        """Return redirect response by Starlette to login page of Oauth SSO provider
-
-        Arguments:
-            redirect_uri {Optional[str]} -- Override redirect_uri specified on this instance (default: None)
-            params {Optional[Dict[str, Any]]} -- Add additional query parameters to the login request.
-            state {Optional[str]} -- Add state parameter. This is useful if you want
-                                    the server to return something specific back to you.
-
-        Returns:
-            RedirectResponse -- Starlette response (may directly be returned from FastAPI)
-        """
         login_uri = await self.get_login_url(redirect_uri=redirect_uri, params=params, state=state)
-        response = RedirectResponse(login_uri, 303)
-        return response
+        return RedirectResponse(login_uri, 303)
 
     async def verify_and_process(
             self,
@@ -172,21 +104,11 @@ class SSOBase:
             headers: Optional[Dict[str, Any]] = None,
             redirect_uri: Optional[str] = None,
     ) -> Optional[dict]:
-        """Get FastAPI (Starlette) Request object and process login.
-        This handler should be used for your /callback path.
-
-        Arguments:
-            request {Request} -- FastAPI request object (or Starlette)
-            params {Optional[Dict[str, Any]]} -- Optional additional query parameters to pass to the provider
-
-        Returns:
-            Optional[dict] -- dict if the login was successfully
-        """
         headers = headers or {}
         code = request.query_params.get("code")
         if code is None:
             raise SSOLoginError(400, "'code' parameter was not found in callback request")
-        self._state = request.query_params.get("state")
+        self.state = request.query_params.get("state")
         return await self.process_login(
             code, request, params=params, additional_headers=headers, redirect_uri=redirect_uri
         )
@@ -200,13 +122,6 @@ class SSOBase:
             additional_headers: Optional[Dict[str, Any]] = None,
             redirect_uri: Optional[str] = None,
     ) -> Optional[dict]:
-        """This method should be called from callback endpoint to verify the user and request user info endpoint.
-        This is low level, you should use {verify_and_process} instead.
-
-        Arguments:
-            params {Optional[Dict[str, Any]]} -- Optional additional query parameters to pass to the provider
-            additional_headers {Optional[Dict[str, Any]]} -- Optional additional headers to be added to all requests
-        """
         params = params or {}
         additional_headers = additional_headers or {}
         additional_headers.update(self.additional_headers or {})
@@ -220,7 +135,7 @@ class SSOBase:
         current_path = f"{scheme}://{url.netloc}{url.path}"
 
         token_url, headers, body = self.oauth_client.prepare_token_request(
-            await self.token_endpoint,
+            self.token_endpoint,
             authorization_response=current_url,
             redirect_url=redirect_uri or self.redirect_uri or current_path,
             code=code,
@@ -236,11 +151,10 @@ class SSOBase:
         async with httpx.AsyncClient() as session:
             response = await session.post(token_url, headers=headers, content=body, auth=auth)
             content = response.json()
-            self._refresh_token = content.get("refresh_token")
             self.oauth_client.parse_request_body_response(json.dumps(content))
 
-            uri, headers, _ = self.oauth_client.add_token(await self.userinfo_endpoint)
+            uri, headers, _ = self.oauth_client.add_token(self.userinfo_endpoint)
             response = await session.get(uri, headers=headers)
             content = response.json()
 
-        return await self.openid_from_response(content)
+        return content
