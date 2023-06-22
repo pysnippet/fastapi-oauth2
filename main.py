@@ -1,14 +1,15 @@
 import json
 
-import jwt
 from fastapi import FastAPI, Request, APIRouter
 from fastapi.responses import HTMLResponse
+from fastapi.security.utils import get_authorization_scheme_param
 from fastapi.templating import Jinja2Templates
 from starlette.authentication import AuthenticationBackend
 from starlette.middleware.authentication import AuthenticationMiddleware
 
-from demo.config import SECRET_KEY, ALGORITHM
-from demo.router import router as auth_router
+from demo.dependencies import get_current_user
+from demo.router import router as demo_router
+from fastapi_oauth2.router import router as oauth2_router
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -21,20 +22,19 @@ async def root(request: Request):
 
 app = FastAPI()
 app.include_router(router)
-app.include_router(auth_router)
+app.include_router(demo_router)
+app.include_router(oauth2_router)
 
 
 class BearerTokenAuthBackend(AuthenticationBackend):
     async def authenticate(self, request):
         authorization = request.cookies.get("Authorization")
+        scheme, param = get_authorization_scheme_param(authorization)
 
-        if not authorization:
+        if not scheme or not param:
             return "", None
 
-        access_token = authorization.split(" ")[1]
-        user = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-
-        return authorization, user
+        return authorization, await get_current_user(param)
 
 
 @app.on_event('startup')

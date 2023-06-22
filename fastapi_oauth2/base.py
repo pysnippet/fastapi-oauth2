@@ -21,7 +21,7 @@ class SSOBase:
 
     client_id: str = None
     client_secret: str = None
-    redirect_uri: Optional[str] = None
+    callback_url: Optional[str] = None
     allow_insecure_http: bool = False
     scope: Optional[List[str]] = None
     state: Optional[str] = None
@@ -36,13 +36,13 @@ class SSOBase:
             self,
             client_id: str,
             client_secret: str,
-            redirect_uri: Optional[str] = None,
+            callback_url: Optional[str] = None,
             allow_insecure_http: bool = False,
             scope: Optional[List[str]] = None,
     ):
         self.client_id = client_id
         self.client_secret = client_secret
-        self.redirect_uri = redirect_uri
+        self.callback_url = callback_url
         self.allow_insecure_http = allow_insecure_http
         if allow_insecure_http:
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
@@ -71,9 +71,9 @@ class SSOBase:
     ) -> Any:
         self.state = state
         params = params or {}
-        redirect_uri = redirect_uri or self.redirect_uri
+        redirect_uri = redirect_uri or self.callback_url
         if redirect_uri is None:
-            raise ValueError("redirect_uri must be provided, either at construction or request time")
+            raise ValueError("callback_url must be provided, either at construction or request time")
         return self.oauth_client.prepare_request_uri(
             self.authorization_endpoint, redirect_uri=redirect_uri, state=state, scope=self.scope, **params
         )
@@ -113,7 +113,7 @@ class SSOBase:
         token_url, headers, content = self.oauth_client.prepare_token_request(
             self.token_endpoint,
             authorization_response=current_url,
-            redirect_url=redirect_uri or self.redirect_uri or current_path,
+            redirect_url=redirect_uri or self.callback_url or current_path,
             code=request.query_params.get("code"),
             **params,
         )
