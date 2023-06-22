@@ -1,10 +1,9 @@
 from .base import SSOBase
 
 
-class GithubSSO(SSOBase):
+class GitHubSSO(SSOBase):
     """Class providing login via GitHub SSO"""
 
-    provider = "github"
     scope = ["user:email"]
     additional_headers = {"accept": "application/json"}
 

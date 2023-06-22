@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -18,17 +19,18 @@ class SSOLoginError(HTTPException):
 class SSOBase:
     """Base class (mixin) for all SSO providers"""
 
-    provider: str = NotImplemented
-    client_id: str = NotImplemented
-    client_secret: str = NotImplemented
-    redirect_uri: Optional[str] = NotImplemented
-    scope: List[str] = NotImplemented
+    client_id: str = None
+    client_secret: str = None
+    redirect_uri: Optional[str] = None
+    allow_insecure_http: bool = False
+    scope: Optional[List[str]] = None
+    state: Optional[str] = None
     _oauth_client: Optional[WebApplicationClient] = None
     additional_headers: Optional[Dict[str, Any]] = None
 
-    authorization_endpoint: str = NotImplemented
-    token_endpoint: str = NotImplemented
-    userinfo_endpoint: str = NotImplemented
+    authorization_endpoint: str = None
+    token_endpoint: str = None
+    userinfo_endpoint: str = None
 
     def __init__(
             self,
@@ -45,12 +47,9 @@ class SSOBase:
         if allow_insecure_http:
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         self.scope = scope or self.scope
-        self.state: Optional[str] = None
 
     @property
     def oauth_client(self) -> WebApplicationClient:
-        if self.client_id == NotImplemented:
-            raise NotImplementedError(f"Provider {self.provider} not supported")
         if self._oauth_client is None:
             self._oauth_client = WebApplicationClient(self.client_id)
         return self._oauth_client
@@ -62,10 +61,6 @@ class SSOBase:
     @property
     def refresh_token(self) -> Optional[str]:
         return self.oauth_client.refresh_token
-
-    @classmethod
-    async def openid_from_response(cls, response: dict) -> dict:
-        raise NotImplementedError(f"Provider {cls.provider} not supported")
 
     async def get_login_url(
             self,
@@ -101,58 +96,36 @@ class SSOBase:
             headers: Optional[Dict[str, Any]] = None,
             redirect_uri: Optional[str] = None,
     ) -> Optional[dict]:
-        headers = headers or {}
-        code = request.query_params.get("code")
-        if code is None:
+        params = params or {}
+        additional_headers = headers or {}
+        additional_headers.update(self.additional_headers or {})
+        if not request.query_params.get("code"):
             raise SSOLoginError(400, "'code' parameter was not found in callback request")
         if self.state != request.query_params.get("state"):
             raise SSOLoginError(400, "'state' parameter does not match")
-        return await self.process_login(
-            code, request, params=params, additional_headers=headers, redirect_uri=redirect_uri
-        )
 
-    async def process_login(
-            self,
-            code: str,
-            request: Request,
-            *,
-            params: Optional[Dict[str, Any]] = None,
-            additional_headers: Optional[Dict[str, Any]] = None,
-            redirect_uri: Optional[str] = None,
-    ) -> Optional[dict]:
-        params = params or {}
-        additional_headers = additional_headers or {}
-        additional_headers.update(self.additional_headers or {})
         url = request.url
-        scheme = url.scheme
-        if not self.allow_insecure_http and scheme != "https":
-            current_url = str(url).replace("http://", "https://")
-            scheme = "https"
-        else:
-            current_url = str(url)
+        scheme = "http" if self.allow_insecure_http else "https"
         current_path = f"{scheme}://{url.netloc}{url.path}"
+        current_path = re.sub(r"^https?", scheme, current_path)
+        current_url = re.sub(r"^https?", scheme, str(url))
 
-        token_url, headers, body = self.oauth_client.prepare_token_request(
+        token_url, headers, content = self.oauth_client.prepare_token_request(
             self.token_endpoint,
             authorization_response=current_url,
             redirect_url=redirect_uri or self.redirect_uri or current_path,
-            code=code,
+            code=request.query_params.get("code"),
             **params,
         )
 
-        if token_url is None:
-            return None
-
         headers.update(additional_headers)
-
         auth = httpx.BasicAuth(self.client_id, self.client_secret)
         async with httpx.AsyncClient() as session:
-            response = await session.post(token_url, headers=headers, content=body, auth=auth)
-            content = response.json()
-            self.oauth_client.parse_request_body_response(json.dumps(content))
+            response = await session.post(token_url, headers=headers, content=content, auth=auth)
+            self.oauth_client.parse_request_body_response(json.dumps(response.json()))
 
-            uri, headers, _ = self.oauth_client.add_token(self.userinfo_endpoint)
-            response = await session.get(uri, headers=headers)
+            url, headers, _ = self.oauth_client.add_token(self.userinfo_endpoint)
+            response = await session.get(url, headers=headers)
             content = response.json()
 
         return content

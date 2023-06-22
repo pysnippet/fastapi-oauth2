@@ -5,7 +5,7 @@ from fastapi import Depends
 from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 
-from fastapi_oauth2.github import GithubSSO
+from fastapi_oauth2.github import GitHubSSO
 from .config import (
     CLIENT_ID,
     CLIENT_SECRET,
@@ -17,7 +17,7 @@ from .dependencies import get_current_user
 from .utils import create_access_token
 
 router = APIRouter()
-sso = GithubSSO(
+sso = GitHubSSO(
     client_id=CLIENT_ID,
     client_secret=CLIENT_SECRET,
     redirect_uri=redirect_url,
