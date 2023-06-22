@@ -9,10 +9,6 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 
-class UnsetStateWarning(UserWarning):
-    """Warning about unset state parameter"""
-
-
 class SSOLoginError(HTTPException):
     """Raised when any login-related error occurs
     (such as when user is not verified or if there was an attempt for fake login)
@@ -78,6 +74,7 @@ class SSOBase:
             params: Optional[Dict[str, Any]] = None,
             state: Optional[str] = None,
     ) -> Any:
+        self.state = state
         params = params or {}
         redirect_uri = redirect_uri or self.redirect_uri
         if redirect_uri is None:
@@ -108,7 +105,8 @@ class SSOBase:
         code = request.query_params.get("code")
         if code is None:
             raise SSOLoginError(400, "'code' parameter was not found in callback request")
-        self.state = request.query_params.get("state")
+        if self.state != request.query_params.get("state"):
+            raise SSOLoginError(400, "'state' parameter does not match")
         return await self.process_login(
             code, request, params=params, additional_headers=headers, redirect_uri=redirect_uri
         )
