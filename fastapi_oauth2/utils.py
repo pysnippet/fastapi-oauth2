@@ -1,11 +1,18 @@
 from datetime import datetime, timedelta
-from typing import Optional
 
 from jose import jwt
 
-from .config import JWT_SECRET, JWT_ALGORITHM
+from .config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRES
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    expire = datetime.utcnow() + expires_delta if expires_delta else timedelta(minutes=15)
-    return jwt.encode({**data, "exp": expire}, JWT_SECRET, algorithm=JWT_ALGORITHM)
+def jwt_encode(data: dict) -> str:
+    return jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def jwt_decode(token: str) -> dict:
+    return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+
+
+def create_access_token(token_data: dict) -> str:
+    expire = datetime.utcnow() + timedelta(minutes=JWT_EXPIRES)
+    return jwt_encode({**token_data, "exp": expire})

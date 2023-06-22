@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-CALLBACK_URL = os.getenv("CALLBACK_URL")
-REDIRECT_URL = os.getenv("REDIRECT_URL")
+OAUTH2_CLIENT_ID = os.getenv("OAUTH2_CLIENT_ID")
+OAUTH2_CLIENT_SECRET = os.getenv("OAUTH2_CLIENT_SECRET")
+OAUTH2_CALLBACK_URL = os.getenv("OAUTH2_CALLBACK_URL")
+OAUTH2_REDIRECT_URL = os.getenv("OAUTH2_REDIRECT_URL")
 
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
-JWT_EXPIRES = int(os.getenv("JWT_EXPIRES"))
+JWT_EXPIRES = int(os.getenv("JWT_EXPIRES", "15"))

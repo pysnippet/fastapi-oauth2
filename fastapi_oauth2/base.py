@@ -9,14 +9,17 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
+from .config import JWT_EXPIRES, OAUTH2_REDIRECT_URL
+from .utils import create_access_token
 
-class SSOLoginError(HTTPException):
+
+class OAuth2LoginError(HTTPException):
     """Raised when any login-related error occurs
     (such as when user is not verified or if there was an attempt for fake login)
     """
 
 
-class SSOBase:
+class OAuth2Base:
     """Base class (mixin) for all SSO providers"""
 
     client_id: str = None
@@ -78,7 +81,7 @@ class SSOBase:
             self.authorization_endpoint, redirect_uri=redirect_uri, state=state, scope=self.scope, **params
         )
 
-    async def get_login_redirect(
+    async def login_redirect(
             self,
             *,
             redirect_uri: Optional[str] = None,
@@ -88,7 +91,7 @@ class SSOBase:
         login_uri = await self.get_login_url(redirect_uri=redirect_uri, params=params, state=state)
         return RedirectResponse(login_uri, 303)
 
-    async def verify_and_process(
+    async def get_token_data(
             self,
             request: Request,
             *,
@@ -100,9 +103,9 @@ class SSOBase:
         additional_headers = headers or {}
         additional_headers.update(self.additional_headers or {})
         if not request.query_params.get("code"):
-            raise SSOLoginError(400, "'code' parameter was not found in callback request")
+            raise OAuth2LoginError(400, "'code' parameter was not found in callback request")
         if self.state != request.query_params.get("state"):
-            raise SSOLoginError(400, "'state' parameter does not match")
+            raise OAuth2LoginError(400, "'state' parameter does not match")
 
         url = request.url
         scheme = "http" if self.allow_insecure_http else "https"
@@ -129,3 +132,23 @@ class SSOBase:
             content = response.json()
 
         return content
+
+    async def token_redirect(
+            self,
+            request: Request,
+            *,
+            params: Optional[Dict[str, Any]] = None,
+            headers: Optional[Dict[str, Any]] = None,
+            redirect_uri: Optional[str] = None,
+    ) -> RedirectResponse:
+        token_data = await self.get_token_data(request, params=params, headers=headers, redirect_uri=redirect_uri)
+        access_token = create_access_token(token_data)
+        response = RedirectResponse(OAUTH2_REDIRECT_URL)
+        response.set_cookie(
+            "Authorization",
+            value=f"Bearer {access_token}",
+            httponly=self.allow_insecure_http,
+            max_age=JWT_EXPIRES * 60,
+            expires=JWT_EXPIRES * 60,
+        )
+        return response

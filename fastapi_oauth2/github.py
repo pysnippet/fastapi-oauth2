@@ -1,7 +1,7 @@
-from .base import SSOBase
+from .base import OAuth2Base
 
 
-class GitHubSSO(SSOBase):
+class GitHubOAuth2(OAuth2Base):
     """Class providing login via GitHub SSO"""
 
     scope = ["user:email"]
