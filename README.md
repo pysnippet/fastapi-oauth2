@@ -1,6 +1,6 @@
 # fastapi-oauth2
 
-Easy to setup social authentication mechanism with support for several auth providers.
+Easy to setup OAuth2 social authentication mechanism with support for several auth providers.
 
 ## Demo
 
@@ -16,3 +16,11 @@ uvicorn main:app --reload
 
 - Make the [**fastapi-oauth2**](./fastapi_oauth2) depend
   on (overuse) the [**social-core**](https://github.com/python-social-auth/social-core)
+
+## Features
+
+- Integrate with any existing FastAPI project (no dependencies of the project should stop the work of
+  the `fastapi-oauth2`)
+- Use multiple OAuth2 providers at the same time
+- Token to user data, user data to token easy conversion
+- Customize OAuth2 routes
