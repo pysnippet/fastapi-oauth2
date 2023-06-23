@@ -98,7 +98,7 @@ class OAuth2Base:
             params: Optional[Dict[str, Any]] = None,
             headers: Optional[Dict[str, Any]] = None,
             redirect_uri: Optional[str] = None,
-    ) -> Optional[dict]:
+    ) -> Optional[Dict[str, Any]]:
         params = params or {}
         additional_headers = headers or {}
         additional_headers.update(self.additional_headers or {})
