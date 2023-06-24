@@ -6,8 +6,7 @@ from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.requests import Request
 from starlette.types import Send, Receive, Scope, ASGIApp
 
-from .types import Config
-from .types import ConfigParams
+from .types import OAuth2Config
 from .utils import jwt_decode
 
 
@@ -25,11 +24,11 @@ class OAuth2Backend(AuthenticationBackend):
 
 
 class OAuth2Middleware:
-    def __init__(self, app: ASGIApp, config: Union[Config, ConfigParams]) -> None:
-        if isinstance(config, Config):
+    def __init__(self, app: ASGIApp, config: Union[OAuth2Config, dict]) -> None:
+        if isinstance(config, OAuth2Config):
             self.config = config
         elif isinstance(config, dict):
-            self.config = Config(**config)
+            self.config = OAuth2Config(**config)
         else:
             raise ValueError("config does not contain valid parameters")
         self.auth_middleware = AuthenticationMiddleware(app, OAuth2Backend())

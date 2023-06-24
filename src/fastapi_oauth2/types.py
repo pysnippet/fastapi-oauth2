@@ -1,32 +1,46 @@
-from enum import Enum
-from typing import Dict, TypedDict
+from typing import List, Optional, Type
+
+from social_core.backends.oauth import BaseOAuth2
 
 
-class OAuth2Provider(str, Enum):
-    github = "github"
-
-
-class OAuth2Client(Dict[str, str]):
+class OAuth2Client:
+    backend: Type[BaseOAuth2]
     client_id: str
     client_secret: str
-    redirect_uri: str
+    redirect_uri: Optional[str]
+
+    def __init__(
+            self,
+            *,
+            backend: Type[BaseOAuth2],
+            client_id: str,
+            client_secret: str,
+            redirect_uri: Optional[str] = None,
+    ):
+        self.backend = backend
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.redirect_uri = redirect_uri
 
 
-class ConfigParams(TypedDict):
+class OAuth2Config:
     allow_http: bool
     jwt_secret: str
     jwt_expires: int
     jwt_algorithm: str
-    providers: Dict[OAuth2Provider, OAuth2Client]
+    clients: List[OAuth2Client]
 
-
-class Config:
-    allow_http: bool = False
-    jwt_secret: str = ""
-    jwt_expires: int = 900
-    jwt_algorithm: str = "HS256"
-    providers: Dict[OAuth2Provider, OAuth2Client] = {}
-
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    def __init__(
+            self,
+            *,
+            allow_http: bool = False,
+            jwt_secret: str = "",
+            jwt_expires: int = 900,
+            jwt_algorithm: str = "HS256",
+            clients: List[OAuth2Client] = None,
+    ):
+        self.allow_http = allow_http
+        self.jwt_secret = jwt_secret
+        self.jwt_expires = jwt_expires
+        self.jwt_algorithm = jwt_algorithm
+        self.clients = clients or []
