@@ -10,7 +10,7 @@ from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from .config import JWT_EXPIRES, OAUTH2_REDIRECT_URL
-from .utils import create_access_token
+from .utils import jwt_create
 
 
 class OAuth2LoginError(HTTPException):
@@ -68,27 +68,22 @@ class OAuth2Base:
     async def get_login_url(
             self,
             *,
-            redirect_uri: Optional[str] = None,
             params: Optional[Dict[str, Any]] = None,
             state: Optional[str] = None,
     ) -> Any:
         self.state = state
         params = params or {}
-        redirect_uri = redirect_uri or self.callback_url
-        if redirect_uri is None:
-            raise ValueError("callback_url must be provided, either at construction or request time")
         return self.oauth_client.prepare_request_uri(
-            self.authorization_endpoint, redirect_uri=redirect_uri, state=state, scope=self.scope, **params
+            self.authorization_endpoint, redirect_uri=self.callback_url, state=state, scope=self.scope, **params
         )
 
     async def login_redirect(
             self,
             *,
-            redirect_uri: Optional[str] = None,
             params: Optional[Dict[str, Any]] = None,
             state: Optional[str] = None,
     ) -> RedirectResponse:
-        login_uri = await self.get_login_url(redirect_uri=redirect_uri, params=params, state=state)
+        login_uri = await self.get_login_url(params=params, state=state)
         return RedirectResponse(login_uri, 303)
 
     async def get_token_data(
@@ -97,7 +92,6 @@ class OAuth2Base:
             *,
             params: Optional[Dict[str, Any]] = None,
             headers: Optional[Dict[str, Any]] = None,
-            redirect_uri: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         params = params or {}
         additional_headers = headers or {}
@@ -116,7 +110,7 @@ class OAuth2Base:
         token_url, headers, content = self.oauth_client.prepare_token_request(
             self.token_endpoint,
             authorization_response=current_url,
-            redirect_url=redirect_uri or self.callback_url or current_path,
+            redirect_url=self.callback_url or current_path,
             code=request.query_params.get("code"),
             **params,
         )
@@ -131,7 +125,7 @@ class OAuth2Base:
             response = await session.get(url, headers=headers)
             content = response.json()
 
-        return content
+        return {**content, "scope": self.scope}
 
     async def token_redirect(
             self,
@@ -139,10 +133,9 @@ class OAuth2Base:
             *,
             params: Optional[Dict[str, Any]] = None,
             headers: Optional[Dict[str, Any]] = None,
-            redirect_uri: Optional[str] = None,
     ) -> RedirectResponse:
-        token_data = await self.get_token_data(request, params=params, headers=headers, redirect_uri=redirect_uri)
-        access_token = create_access_token(token_data)
+        token_data = await self.get_token_data(request, params=params, headers=headers)
+        access_token = jwt_create(token_data)
         response = RedirectResponse(OAUTH2_REDIRECT_URL)
         response.set_cookie(
             "Authorization",

@@ -13,6 +13,6 @@ def jwt_decode(token: str) -> dict:
     return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
 
-def create_access_token(token_data: dict) -> str:
+def jwt_create(token_data: dict) -> str:
     expire = datetime.utcnow() + timedelta(minutes=JWT_EXPIRES)
     return jwt_encode({**token_data, "exp": expire})
