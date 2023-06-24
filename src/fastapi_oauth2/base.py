@@ -5,21 +5,15 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 from oauthlib.oauth2 import WebApplicationClient
-from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from .config import JWT_EXPIRES, OAUTH2_REDIRECT_URL
+from .exceptions import OAuth2LoginError
 from .utils import jwt_create
 
 
-class OAuth2LoginError(HTTPException):
-    """Raised when any login-related error occurs
-    (such as when user is not verified or if there was an attempt for fake login)
-    """
-
-
-class OAuth2Base:
+class OAuth2Core:
     """Base class (mixin) for all SSO providers"""
 
     client_id: str = None
