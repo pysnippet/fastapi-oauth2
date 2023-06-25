@@ -1,12 +1,18 @@
-from typing import Optional, Tuple, Union
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 from fastapi.security.utils import get_authorization_scheme_param
-from starlette.authentication import AuthenticationBackend, AuthCredentials
+from starlette.authentication import AuthCredentials
+from starlette.authentication import AuthenticationBackend
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.requests import Request
-from starlette.types import Send, Receive, Scope, ASGIApp
+from starlette.types import ASGIApp
+from starlette.types import Receive
+from starlette.types import Scope
+from starlette.types import Send
 
-from .types import OAuth2Config
+from .config import OAuth2Config
 from .utils import jwt_decode
 
 
@@ -24,13 +30,16 @@ class OAuth2Backend(AuthenticationBackend):
 
 
 class OAuth2Middleware:
+    config: OAuth2Config
+    auth_middleware: AuthenticationMiddleware
+
     def __init__(self, app: ASGIApp, config: Union[OAuth2Config, dict]) -> None:
         if isinstance(config, OAuth2Config):
             self.config = config
         elif isinstance(config, dict):
             self.config = OAuth2Config(**config)
         else:
-            raise ValueError("config does not contain valid parameters")
+            raise TypeError("config is not a valid type")
         self.auth_middleware = AuthenticationMiddleware(app, OAuth2Backend())
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:

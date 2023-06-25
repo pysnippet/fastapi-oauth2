@@ -8,7 +8,7 @@ from oauthlib.oauth2 import WebApplicationClient
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
-from .config import JWT_EXPIRES, OAUTH2_REDIRECT_URL
+from .config import JWT_EXPIRES
 from .exceptions import OAuth2LoginError
 from .utils import jwt_create
 
@@ -130,7 +130,7 @@ class OAuth2Core:
     ) -> RedirectResponse:
         token_data = await self.get_token_data(request, params=params, headers=headers)
         access_token = jwt_create(token_data)
-        response = RedirectResponse(OAUTH2_REDIRECT_URL)
+        response = RedirectResponse(request.base_url)
         response.set_cookie(
             "Authorization",
             value=f"Bearer {access_token}",

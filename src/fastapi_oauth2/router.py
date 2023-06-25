@@ -7,7 +7,6 @@ from .config import (
     OAUTH2_CLIENT_ID,
     OAUTH2_CLIENT_SECRET,
     OAUTH2_CALLBACK_URL,
-    OAUTH2_REDIRECT_URL,
 )
 
 router = APIRouter(prefix="/oauth2")
@@ -19,8 +18,9 @@ oauth2 = GitHubOAuth2(
 )
 
 
-@router.get("/login")
-async def login():
+@router.get("/{provider}/auth")
+async def login(provider: str):
+    print(provider)
     return await oauth2.login_redirect()
 
 
@@ -30,7 +30,7 @@ async def token(request: Request):
 
 
 @router.get("/logout")
-async def logout():
-    response = RedirectResponse(OAUTH2_REDIRECT_URL)
+async def logout(request: Request):
+    response = RedirectResponse(request.base_url)
     response.delete_cookie("Authorization")
     return response
