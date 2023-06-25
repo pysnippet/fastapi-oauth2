@@ -10,7 +10,7 @@
 <body style="margin: 0; display: flex; flex-direction: column; background: #1e1e20; color: #dfdfd6; font-family: sans-serif;">
 <header style="display: flex; background: #161618; height: 70px; width: 100%;">
     <div style="display: flex; align-items: center; margin: auto 50px auto auto;">
-        {% if request.user %}
+        {% if request.user.is_authenticated %}
             <a href="/oauth2/logout" style="text-decoration: none; color: #dfdfd6; margin-right: 20px;">Sign out</a>
             <img style="height: 50px; width: 50px;" src="{{ request.user.avatar_url }}" alt="Pic">
         {% else %}
@@ -26,7 +26,7 @@
 </header>
 <section
         style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: calc(100vh - 70px);">
-    {% if request.user %}
+    {% if request.user.is_authenticated %}
         <h1>Hi, {{ request.user.name }}</h1>
         <p>This is what your JWT contains currently</p>
         <pre>{{ json.dumps(request.user, indent=4) }}</pre>

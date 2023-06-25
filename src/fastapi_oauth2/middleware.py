@@ -1,9 +1,9 @@
+from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
 
 from fastapi.security.utils import get_authorization_scheme_param
-from starlette.authentication import AuthCredentials
 from starlette.authentication import AuthenticationBackend
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.requests import Request
@@ -16,17 +16,32 @@ from .config import OAuth2Config
 from .utils import jwt_decode
 
 
+class Auth:
+    scopes: List[str]
+
+    def __init__(self, scopes: Optional[List[str]] = None) -> None:
+        self.scopes = scopes or []
+
+
+class User(dict):
+    is_authenticated: bool
+
+    def __init__(self, seq: Optional[dict] = None, **kwargs) -> None:
+        self.is_authenticated = seq is not None
+        super().__init__(seq or {}, **kwargs)
+
+
 class OAuth2Backend(AuthenticationBackend):
-    async def authenticate(self, request: Request) -> Optional[Tuple["AuthCredentials", Optional[dict]]]:
+    async def authenticate(self, request: Request) -> Optional[Tuple["Auth", "User"]]:
         authorization = request.cookies.get("Authorization")
         scheme, param = get_authorization_scheme_param(authorization)
 
         if not scheme or not param:
-            return AuthCredentials(), None
+            return Auth(), User()
 
-        access_token = jwt_decode(param)
-        scope = access_token.pop("scope")
-        return AuthCredentials(scope), access_token
+        user = jwt_decode(param)
+        scopes = user.pop("scope")
+        return Auth(scopes), User(user)
 
 
 class OAuth2Middleware:
