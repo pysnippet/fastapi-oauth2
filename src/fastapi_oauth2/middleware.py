@@ -23,6 +23,7 @@ from .core import OAuth2Core
 
 
 class Auth:
+    http: bool
     secret: str
     expires: int
     algorithm: str
@@ -31,6 +32,10 @@ class Auth:
 
     def __init__(self, scopes: Optional[List[str]] = None) -> None:
         self.scopes = scopes or []
+
+    @classmethod
+    def set_http(cls, http: bool) -> None:
+        cls.http = http
 
     @classmethod
     def set_secret(cls, secret: str) -> None:
@@ -72,10 +77,10 @@ class User(dict):
 
 class OAuth2Backend(AuthenticationBackend):
     def __init__(self, config: OAuth2Config) -> None:
+        Auth.set_http(config.allow_http)
         Auth.set_secret(config.jwt_secret)
         Auth.set_expires(config.jwt_expires)
         Auth.set_algorithm(config.jwt_algorithm)
-        OAuth2Core.allow_http = config.allow_http
         for client in config.clients:
             Auth.register_client(client)
 
