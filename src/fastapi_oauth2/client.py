@@ -1,4 +1,6 @@
-from typing import Optional, Type, Sequence
+from typing import Optional
+from typing import Sequence
+from typing import Type
 
 from social_core.backends.oauth import BaseOAuth2
 

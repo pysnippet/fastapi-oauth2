@@ -1,14 +1,11 @@
 from typing import Optional
 
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
-from jose import JWTError
 from starlette.requests import Request
 from starlette.status import HTTP_403_FORBIDDEN
-
-from fastapi_oauth2.utils import jwt_decode
 
 
 class OAuth2PasswordBearerCookie(OAuth2):
@@ -40,12 +37,3 @@ class OAuth2PasswordBearerCookie(OAuth2):
 
 
 oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="/token")
-
-
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    try:
-        return jwt_decode(token)
-    except JWTError:
-        raise HTTPException(
-            status_code=HTTP_403_FORBIDDEN, detail="Could not validate credentials"
-        )

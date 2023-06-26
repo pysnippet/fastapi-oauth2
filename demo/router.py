@@ -2,14 +2,14 @@ from fastapi import APIRouter
 from fastapi import Depends
 from starlette.requests import Request
 
-from .dependencies import get_current_user
+from .dependencies import oauth2_scheme
 
 router = APIRouter()
 
 
 @router.get("/user")
-def user(current_user=Depends(get_current_user)):
-    return current_user
+def user(request: Request, _: str = Depends(oauth2_scheme)):
+    return request.user
 
 
 @router.post("/token")
