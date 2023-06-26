@@ -1,9 +1,14 @@
+from datetime import datetime
+from datetime import timedelta
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
 
 from fastapi.security.utils import get_authorization_scheme_param
+from jose.jwt import decode as jwt_decode
+from jose.jwt import encode as jwt_encode
 from starlette.authentication import AuthenticationBackend
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.requests import Request
@@ -12,15 +17,49 @@ from starlette.types import Receive
 from starlette.types import Scope
 from starlette.types import Send
 
+from .client import OAuth2Client
 from .config import OAuth2Config
-from .utils import jwt_decode
+from .core import OAuth2Core
 
 
 class Auth:
+    secret: str
+    expires: int
+    algorithm: str
     scopes: List[str]
+    clients: Dict[str, OAuth2Core] = {}
 
     def __init__(self, scopes: Optional[List[str]] = None) -> None:
         self.scopes = scopes or []
+
+    @classmethod
+    def set_secret(cls, secret: str) -> None:
+        cls.secret = secret
+
+    @classmethod
+    def set_expires(cls, expires: int) -> None:
+        cls.expires = expires
+
+    @classmethod
+    def set_algorithm(cls, algorithm: str) -> None:
+        cls.algorithm = algorithm
+
+    @classmethod
+    def register_client(cls, client: OAuth2Client) -> None:
+        cls.clients[client.backend.name] = OAuth2Core(client)
+
+    @classmethod
+    def jwt_encode(cls, data: dict) -> str:
+        return jwt_encode(data, cls.secret, algorithm=cls.algorithm)
+
+    @classmethod
+    def jwt_decode(cls, token: str) -> dict:
+        return jwt_decode(token, cls.secret, algorithms=[cls.algorithm])
+
+    @classmethod
+    def jwt_create(cls, token_data: dict) -> str:
+        expire = datetime.utcnow() + timedelta(minutes=cls.expires)
+        return cls.jwt_encode({**token_data, "exp": expire})
 
 
 class User(dict):
@@ -32,6 +71,14 @@ class User(dict):
 
 
 class OAuth2Backend(AuthenticationBackend):
+    def __init__(self, config: OAuth2Config) -> None:
+        Auth.set_secret(config.jwt_secret)
+        Auth.set_expires(config.jwt_expires)
+        Auth.set_algorithm(config.jwt_algorithm)
+        OAuth2Core.allow_http = config.allow_http
+        for client in config.clients:
+            Auth.register_client(client)
+
     async def authenticate(self, request: Request) -> Optional[Tuple["Auth", "User"]]:
         authorization = request.cookies.get("Authorization")
         scheme, param = get_authorization_scheme_param(authorization)
@@ -39,23 +86,19 @@ class OAuth2Backend(AuthenticationBackend):
         if not scheme or not param:
             return Auth(), User()
 
-        user = jwt_decode(param)
-        scopes = user.pop("scope")
-        return Auth(scopes), User(user)
+        user = Auth.jwt_decode(param)
+        return Auth(user.pop("scope")), User(user)
 
 
 class OAuth2Middleware:
-    config: OAuth2Config
-    auth_middleware: AuthenticationMiddleware
+    auth_middleware: AuthenticationMiddleware = None
 
     def __init__(self, app: ASGIApp, config: Union[OAuth2Config, dict]) -> None:
-        if isinstance(config, OAuth2Config):
-            self.config = config
-        elif isinstance(config, dict):
-            self.config = OAuth2Config(**config)
-        else:
+        if isinstance(config, dict):
+            config = OAuth2Config(**config)
+        elif not isinstance(config, OAuth2Config):
             raise TypeError("config is not a valid type")
-        self.auth_middleware = AuthenticationMiddleware(app, OAuth2Backend())
+        self.auth_middleware = AuthenticationMiddleware(app, OAuth2Backend(config))
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         await self.auth_middleware(scope, receive, send)
