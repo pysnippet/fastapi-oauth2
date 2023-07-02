@@ -1,6 +1,7 @@
 ## Demonstration
 
-This sample application is made to demonstrate the use of the [**fastapi-oauth2**](./fastapi_oauth2) package.
+This sample application is made to demonstrate the use of
+the [**fastapi-oauth2**](https://github.com/pysnippet/fastapi-oauth2) package.
 
 ## Installation
 
