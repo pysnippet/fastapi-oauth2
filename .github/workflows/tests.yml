@@ -1,0 +1,55 @@
+name: tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    strategy:
+      matrix:
+        include:
+          - python: "3.6"
+            env: py36-fastapi68
+            os: ubuntu-20.04  # 3.6 is not available on ubuntu-20.04
+          - python: "3.8"
+            env: py38-fastapi68
+          - python: "3.10"
+            env: py310-fastapi68
+          - python: "3.11"
+            env: py311-fastapi68
+
+          - python: "3.7"
+            env: py37-fastapi84
+          - python: "3.9"
+            env: py39-fastapi84
+          - python: "3.10"
+            env: py310-fastapi84
+          - python: "3.11"
+            env: py311-fastapi84
+
+          - python: "3.7"
+            env: py37-fastapi99
+          - python: "3.9"
+            env: py39-fastapi99
+          - python: "3.10"
+            env: py310-fastapi99
+          - python: "3.11"
+            env: py311-fastapi99
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          sh build.sh
+          pip install tox tox-gh-actions
+      - name: Run tests using tox
+        run: tox -e ${{ matrix.env }}
