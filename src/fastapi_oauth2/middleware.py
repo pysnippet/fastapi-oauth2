@@ -85,7 +85,10 @@ class OAuth2Backend(AuthenticationBackend):
             Auth.register_client(client)
 
     async def authenticate(self, request: Request) -> Optional[Tuple["Auth", "User"]]:
-        authorization = request.cookies.get("Authorization")
+        authorization = request.headers.get(
+            "Authorization",
+            request.cookies.get("Authorization"),
+        )
         scheme, param = get_authorization_scheme_param(authorization)
 
         if not scheme or not param:
