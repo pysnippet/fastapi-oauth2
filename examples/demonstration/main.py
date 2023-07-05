@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter
+from fastapi import FastAPI
 
 from config import oauth2_config
 from fastapi_oauth2.middleware import OAuth2Middleware
