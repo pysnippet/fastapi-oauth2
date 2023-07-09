@@ -10,7 +10,16 @@ from fastapi_oauth2.router import router as oauth2_router
 app = FastAPI()
 
 app.include_router(oauth2_router)
-app.add_middleware(OAuth2Middleware, config={})
+app.add_middleware(OAuth2Middleware, config={
+    "allow_http": True,
+    "clients": [
+        OAuth2Client(
+            backend=GithubOAuth2,
+            client_id="test_id",
+            client_secret="test_secret",
+        ),
+    ],
+})
 
 
 
