@@ -22,7 +22,8 @@ app.add_middleware(OAuth2Middleware, config={
 })
 
 
-
-def test_read_main():
-    response = client.get("/")
-    assert response.status_code == 404
+@pytest.mark.anyio
+async def test_auth_redirect():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.get("/oauth2/github/auth")
+        assert response.status_code == 303  # Redirect
