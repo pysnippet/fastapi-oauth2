@@ -9,7 +9,6 @@ from typing import Optional
 from urllib.parse import urljoin
 
 import httpx
-import requests
 from oauthlib.oauth2 import WebApplicationClient
 from social_core.backends.oauth import BaseOAuth2
 from social_core.strategy import BaseStrategy
@@ -38,7 +37,7 @@ class OAuth2Strategy(BaseStrategy):
 
     @staticmethod
     def get_json(url, method='GET', *args, **kwargs):
-        return requests.request(method, url, *args, **kwargs)
+        return httpx.request(method, url, *args, **kwargs)
 
 
 class OAuth2Core:

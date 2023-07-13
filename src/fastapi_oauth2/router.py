@@ -16,7 +16,7 @@ async def token(request: Request, provider: str):
 
 
 @router.get("/logout")
-async def logout(request: Request):
+def logout(request: Request):
     response = RedirectResponse(request.base_url)
     response.delete_cookie("Authorization")
     return response

@@ -1,0 +1,16 @@
+# caches
+.idea
+.tox
+.pytest_cache
+*.egg-info
+__pycache__
+
+# docs
+docs/node_modules
+docs/package-lock.json
+docs/.vitepress/cache
+docs/.vitepress/dist
+
+# build
+build
+dist

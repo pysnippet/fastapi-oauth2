@@ -63,7 +63,7 @@ class Auth:
 
     @classmethod
     def jwt_create(cls, token_data: dict) -> str:
-        expire = datetime.utcnow() + timedelta(minutes=cls.expires)
+        expire = datetime.utcnow() + timedelta(seconds=cls.expires)
         return cls.jwt_encode({**token_data, "exp": expire})
 
 
@@ -85,7 +85,10 @@ class OAuth2Backend(AuthenticationBackend):
             Auth.register_client(client)
 
     async def authenticate(self, request: Request) -> Optional[Tuple["Auth", "User"]]:
-        authorization = request.cookies.get("Authorization")
+        authorization = request.headers.get(
+            "Authorization",
+            request.cookies.get("Authorization"),
+        )
         scheme, param = get_authorization_scheme_param(authorization)
 
         if not scheme or not param:

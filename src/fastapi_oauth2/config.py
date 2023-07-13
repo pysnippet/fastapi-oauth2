@@ -1,5 +1,6 @@
 import os
 from typing import List
+from typing import Union
 
 from .client import OAuth2Client
 
@@ -16,7 +17,7 @@ class OAuth2Config:
             *,
             allow_http: bool = False,
             jwt_secret: str = "",
-            jwt_expires: int = 900,
+            jwt_expires: Union[int, str] = 900,
             jwt_algorithm: str = "HS256",
             clients: List[OAuth2Client] = None,
     ):
