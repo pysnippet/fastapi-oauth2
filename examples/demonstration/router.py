@@ -3,8 +3,9 @@ import json
 from fastapi import Depends
 from fastapi import Request, APIRouter
 from fastapi.responses import HTMLResponse
-from fastapi.security import OAuth2
 from fastapi.templating import Jinja2Templates
+
+from fastapi_oauth2.security import OAuth2
 
 oauth2 = OAuth2()
 router = APIRouter()
