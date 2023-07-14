@@ -1,7 +1,8 @@
 import json
 
 from fastapi import Depends
-from fastapi import Request, APIRouter
+from fastapi import Request
+from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
