@@ -95,7 +95,7 @@ class OAuth2Backend(AuthenticationBackend):
             return Auth(), User()
 
         user = Auth.jwt_decode(param)
-        return Auth(user.pop("scope")), User(user)
+        return Auth(user.pop("scope", [])), User(user)
 
 
 class OAuth2Middleware:
