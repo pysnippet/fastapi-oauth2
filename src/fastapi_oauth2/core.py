@@ -58,6 +58,7 @@ class OAuth2Core:
         self.client_secret = client.client_secret
         self.scope = client.scope or self.scope
         self.provider = client.backend.name
+        self.redirect_uri = client.redirect_uri
         self.backend = client.backend(OAuth2Strategy())
         self.authorization_endpoint = client.backend.AUTHORIZATION_URL
         self.token_endpoint = client.backend.ACCESS_TOKEN_URL
@@ -115,7 +116,7 @@ class OAuth2Core:
     async def token_redirect(self, request: Request) -> RedirectResponse:
         token_data = await self.get_token_data(request)
         access_token = request.auth.jwt_create(token_data)
-        response = RedirectResponse(request.base_url)
+        response = RedirectResponse(self.redirect_uri or request.base_url)
         response.set_cookie(
             "Authorization",
             value=f"Bearer {access_token}",
