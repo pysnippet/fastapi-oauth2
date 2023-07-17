@@ -9,7 +9,9 @@ from typing import Union
 from fastapi.security.utils import get_authorization_scheme_param
 from jose.jwt import decode as jwt_decode
 from jose.jwt import encode as jwt_encode
+from starlette.authentication import AuthCredentials
 from starlette.authentication import AuthenticationBackend
+from starlette.authentication import BaseUser
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.requests import Request
 from starlette.types import ASGIApp
@@ -22,16 +24,13 @@ from .config import OAuth2Config
 from .core import OAuth2Core
 
 
-class Auth:
+class Auth(AuthCredentials):
     http: bool
     secret: str
     expires: int
     algorithm: str
     scopes: List[str]
     clients: Dict[str, OAuth2Core] = {}
-
-    def __init__(self, scopes: Optional[List[str]] = None) -> None:
-        self.scopes = scopes or []
 
     @classmethod
     def set_http(cls, http: bool) -> None:
@@ -67,12 +66,24 @@ class Auth:
         return cls.jwt_encode({**token_data, "exp": expire})
 
 
-class User(dict):
-    is_authenticated: bool
-
+class User(BaseUser, dict):
     def __init__(self, seq: Optional[dict] = None, **kwargs) -> None:
-        self.is_authenticated = seq is not None
+        self._is_authenticated = seq is not None
+        self._display_name = ""
+        self._identity = ""
         super().__init__(seq or {}, **kwargs)
+
+    @property
+    def is_authenticated(self) -> bool:
+        return self._is_authenticated
+
+    @property
+    def display_name(self) -> str:
+        return self._display_name
+
+    @property
+    def identity(self) -> str:
+        return self._identity
 
 
 class OAuth2Backend(AuthenticationBackend):
