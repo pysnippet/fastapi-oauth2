@@ -70,10 +70,10 @@ class Auth(AuthCredentials):
 
 class User(BaseUser, dict):
     def __init__(self, seq: Optional[dict] = None, **kwargs) -> None:
-        self._is_authenticated = seq is not None
-        self._display_name = ""
-        self._identity = ""
         super().__init__(seq or {}, **kwargs)
+        self._is_authenticated = seq is not None
+        self._identity = self.get("identity", "")
+        self._display_name = self.get("display_name", "")
 
     @property
     def is_authenticated(self) -> bool:
