@@ -25,11 +25,12 @@ async def root(request: Request):
 @router.get("/auth")
 def sim_auth(request: Request):
     access_token = request.auth.jwt_create({
-        "id": 0,
-        "avatar_url": None,
-        "name": "John Doe",
+        "id": 1,
+        "identity": "demo:1",
+        "image": None,
+        "display_name": "John Doe",
         "email": "john.doe@auth.sim",
-        "login": "JohnDoe",
+        "username": "JohnDoe",
         "exp": 3689609839,
     })
     response = RedirectResponse("/")
