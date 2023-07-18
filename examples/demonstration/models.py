@@ -21,3 +21,7 @@ class User(BaseModel):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String)
+    email = Column(String)
+    name = Column(String)
+    image = Column(String)
+    identity = Column(String, unique=True)  # provider_name:user_id
