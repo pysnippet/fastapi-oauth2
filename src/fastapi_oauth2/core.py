@@ -109,7 +109,7 @@ class OAuth2Core:
         async with httpx.AsyncClient() as session:
             response = await session.post(token_url, headers=headers, content=content, auth=auth)
             token = self.oauth_client.parse_request_body_response(json.dumps(response.json()))
-            data = self.backend.user_data(token.get("access_token"))
+            data = self.standardize(self.backend.user_data(token.get("access_token")))
 
         return {**data, "scope": self.scope}
 
@@ -125,3 +125,8 @@ class OAuth2Core:
             httponly=request.auth.http,
         )
         return response
+
+    def standardize(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        data["identity"] = "%s:%s" % (self.provider, data.get("id"))
+        data["display_name"] = data.get("name")
+        return data
