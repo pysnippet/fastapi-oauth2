@@ -6,6 +6,8 @@ from .client import OAuth2Client
 
 
 class OAuth2Config:
+    """Configuration class of the authentication middleware."""
+
     allow_http: bool
     jwt_secret: str
     jwt_expires: int

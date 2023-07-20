@@ -6,6 +6,8 @@ from social_core.backends.oauth import BaseOAuth2
 
 
 class OAuth2Client:
+    """OAuth2 client configuration for a single provider."""
+
     backend: Type[BaseOAuth2]
     client_id: str
     client_secret: str

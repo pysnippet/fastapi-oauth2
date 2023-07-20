@@ -20,12 +20,12 @@ from .client import OAuth2Client
 
 
 class OAuth2LoginError(HTTPException):
-    """Raised when any login-related error occurs
-    (such as when user is not verified or if there was an attempt for fake login)
-    """
+    """Raised when any login-related error occurs."""
 
 
 class OAuth2Strategy(BaseStrategy):
+    """Dummy strategy for using the `BaseOAuth2.user_data` method."""
+
     def request_data(self, merge=True):
         return {}
 
