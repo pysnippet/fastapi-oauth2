@@ -127,6 +127,9 @@ class OAuth2Core:
         return response
 
     def standardize(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        # TODO: Create an issue for collecting all possible field names
+        #  and finish up this method and create a unit-test for each.
+        #  :https://github.com/python-social-auth/social-core/tree/master/social_core/backends
         data["identity"] = "%s:%s" % (self.provider, data.get("id"))
         data["display_name"] = data.get("name")
         return data
