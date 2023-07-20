@@ -26,17 +26,17 @@ class OAuth2LoginError(HTTPException):
 class OAuth2Strategy(BaseStrategy):
     """Dummy strategy for using the `BaseOAuth2.user_data` method."""
 
-    def request_data(self, merge=True):
+    def request_data(self, merge=True) -> Dict[str, Any]:
         return {}
 
-    def absolute_uri(self, path=None):
+    def absolute_uri(self, path=None) -> str:
         return path
 
-    def get_setting(self, name):
-        return None
+    def get_setting(self, name) -> Any:
+        """Mocked setting method."""
 
     @staticmethod
-    def get_json(url, method='GET', *args, **kwargs):
+    def get_json(url, method='GET', *args, **kwargs) -> httpx.Response:
         return httpx.request(method, url, *args, **kwargs)
 
 

@@ -104,7 +104,7 @@ class OAuth2Backend(AuthenticationBackend):
             Auth.register_client(client)
         self.callback = callback
 
-    async def authenticate(self, request: Request) -> Optional[Tuple["Auth", "User"]]:
+    async def authenticate(self, request: Request) -> Optional[Tuple[Auth, User]]:
         authorization = request.headers.get(
             "Authorization",
             request.cookies.get("Authorization"),

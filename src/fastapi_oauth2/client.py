@@ -22,7 +22,7 @@ class OAuth2Client:
             client_secret: str,
             redirect_uri: Optional[str] = None,
             scope: Optional[Sequence[str]] = None,
-    ):
+    ) -> None:
         self.backend = backend
         self.client_id = client_id
         self.client_secret = client_secret

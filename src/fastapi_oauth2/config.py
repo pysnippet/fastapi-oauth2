@@ -22,7 +22,7 @@ class OAuth2Config:
             jwt_expires: Union[int, str] = 900,
             jwt_algorithm: str = "HS256",
             clients: List[OAuth2Client] = None,
-    ):
+    ) -> None:
         if allow_http:
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         self.allow_http = allow_http
