@@ -1,5 +1,8 @@
+from typing import Any
 from typing import Callable
+from typing import Dict
 from typing import Optional
+from typing import Tuple
 from typing import Type
 
 from fastapi.security import OAuth2 as FastAPIOAuth2
@@ -9,7 +12,7 @@ from starlette.datastructures import Headers
 from starlette.requests import Request
 
 
-def use_cookies(cls: Type[FastAPIOAuth2]) -> Callable[[...], FastAPIOAuth2]:
+def use_cookies(cls: Type[FastAPIOAuth2]) -> Callable[[Tuple[Any], Dict[str, Any]], FastAPIOAuth2]:
     """OAuth2 classes wrapped with this decorator will use cookies for the Authorization header."""
 
     def _use_cookies(*args, **kwargs) -> FastAPIOAuth2:
