@@ -41,7 +41,7 @@ class OAuth2Strategy(BaseStrategy):
 
 
 class OAuth2Core:
-    """Base class (mixin) for all SSO providers"""
+    """OAuth2 flow handler of a certain provider."""
 
     client_id: str = None
     client_secret: str = None
@@ -72,17 +72,14 @@ class OAuth2Core:
     def get_redirect_uri(self, request: Request) -> str:
         return urljoin(str(request.base_url), "/oauth2/%s/token" % self.provider)
 
-    async def get_login_url(self, request: Request) -> Any:
+    async def login_redirect(self, request: Request) -> RedirectResponse:
         redirect_uri = self.get_redirect_uri(request)
         state = "".join([random.choice(string.ascii_letters) for _ in range(32)])
-        return self.oauth_client.prepare_request_uri(
+        return RedirectResponse(str(self.oauth_client.prepare_request_uri(
             self.authorization_endpoint, redirect_uri=redirect_uri, state=state, scope=self.scope
-        )
+        )), 303)
 
-    async def login_redirect(self, request: Request) -> RedirectResponse:
-        return RedirectResponse(await self.get_login_url(request), 303)
-
-    async def get_token_data(self, request: Request) -> Optional[Dict[str, Any]]:
+    async def token_redirect(self, request: Request) -> RedirectResponse:
         if not request.query_params.get("code"):
             raise OAuth2LoginError(400, "'code' parameter was not found in callback request")
         if not request.query_params.get("state"):
@@ -111,11 +108,7 @@ class OAuth2Core:
             token = self.oauth_client.parse_request_body_response(json.dumps(response.json()))
             data = self.standardize(self.backend.user_data(token.get("access_token")))
 
-        return {**data, "scope": self.scope}
-
-    async def token_redirect(self, request: Request) -> RedirectResponse:
-        token_data = await self.get_token_data(request)
-        access_token = request.auth.jwt_create(token_data)
+        access_token = request.auth.jwt_create({**data, "scope": self.scope})
         response = RedirectResponse(self.redirect_uri or request.base_url)
         response.set_cookie(
             "Authorization",
