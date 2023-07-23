@@ -27,6 +27,8 @@ from .core import OAuth2Core
 
 
 class Auth(AuthCredentials):
+    """Extended auth credentials schema based on Starlette AuthCredentials."""
+
     http: bool
     secret: str
     expires: int
@@ -69,23 +71,27 @@ class Auth(AuthCredentials):
 
 
 class User(BaseUser, dict):
-    def __init__(self, seq: Optional[dict] = None, **kwargs) -> None:
-        super().__init__(seq or {}, **kwargs)
-        self._is_authenticated = seq is not None
-        self._identity = self.get("identity", "")
-        self._display_name = self.get("display_name", "")
+    """Extended user schema based on Starlette BaseUser."""
 
     @property
     def is_authenticated(self) -> bool:
-        return self._is_authenticated
+        return bool(self)
 
     @property
     def display_name(self) -> str:
-        return self._display_name
+        return self.get("display_name", "")  # name
 
     @property
     def identity(self) -> str:
-        return self._identity
+        return self.get("identity", "")  # username
+
+    @property
+    def picture(self) -> str:
+        return self.get("picture", "")  # image
+
+    @property
+    def email(self) -> str:
+        return self.get("email", "")  # email
 
 
 class OAuth2Backend(AuthenticationBackend):
