@@ -109,9 +109,9 @@ class OAuth2Core:
         async with httpx.AsyncClient() as session:
             response = await session.post(token_url, headers=headers, content=content, auth=auth)
             token = self.oauth_client.parse_request_body_response(json.dumps(response.json()))
-            data = self.standardize(self.backend.user_data(token.get("access_token")))
+            token_data = self.standardize(self.backend.user_data(token.get("access_token")))
+            access_token = request.auth.jwt_create(token_data)
 
-        access_token = request.auth.jwt_create({**data, "scope": self.scope})
         response = RedirectResponse(self.redirect_uri or request.base_url)
         response.set_cookie(
             "Authorization",
@@ -123,9 +123,6 @@ class OAuth2Core:
         return response
 
     def standardize(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        # TODO: Create an issue for collecting all possible field names
-        #  and finish up this method and create a unit-test for each.
-        #  :https://github.com/python-social-auth/social-core/tree/master/social_core/backends
-        data["identity"] = "%s:%s" % (self.provider, data.get("id"))
-        data["display_name"] = data.get("name")
+        data["provider"] = self.provider
+        data["scope"] = self.scope
         return data
