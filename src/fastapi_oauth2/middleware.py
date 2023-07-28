@@ -1,10 +1,12 @@
 from datetime import datetime
 from datetime import timedelta
+from typing import Any
 from typing import Awaitable
 from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -21,6 +23,7 @@ from starlette.types import Receive
 from starlette.types import Scope
 from starlette.types import Send
 
+from .claims import Claims
 from .client import OAuth2Client
 from .config import OAuth2Config
 from .core import OAuth2Core
@@ -35,6 +38,17 @@ class Auth(AuthCredentials):
     algorithm: str
     scopes: List[str]
     clients: Dict[str, OAuth2Core] = {}
+
+    provider: str
+    default_provider: str = "local"
+
+    def __init__(
+            self,
+            scopes: Optional[Sequence[str]] = None,
+            provider: str = default_provider,
+    ) -> None:
+        super().__init__(scopes)
+        self.provider = provider
 
     @classmethod
     def set_http(cls, http: bool) -> None:
@@ -79,19 +93,29 @@ class User(BaseUser, dict):
 
     @property
     def display_name(self) -> str:
-        return self.get("display_name", "")  # name
+        return self.__getprop__("display_name")
 
     @property
     def identity(self) -> str:
-        return self.get("identity", "")  # username
+        return self.__getprop__("identity")
 
     @property
     def picture(self) -> str:
-        return self.get("picture", "")  # image
+        return self.__getprop__("picture")
 
     @property
     def email(self) -> str:
-        return self.get("email", "")  # email
+        return self.__getprop__("email")
+
+    def use_claims(self, claims: Claims) -> "User":
+        for attr, item in claims.items():
+            self[attr] = self.__getprop__(item)
+        return self
+
+    def __getprop__(self, item, default="") -> Any:
+        if callable(item):
+            return item(self)
+        return self.get(item, default)
 
 
 class OAuth2Backend(AuthenticationBackend):
@@ -120,8 +144,12 @@ class OAuth2Backend(AuthenticationBackend):
         if not scheme or not param:
             return Auth(), User()
 
-        user = Auth.jwt_decode(param)
-        auth, user = Auth(user.pop("scope", [])), User(user)
+        user = User(Auth.jwt_decode(param))
+        user.update(provider=user.get("provider", Auth.default_provider))
+        auth = Auth(user.pop("scope", []), user.get("provider"))
+        client = Auth.clients.get(auth.provider)
+        claims = client.claims if client else Claims()
+        user = user.use_claims(claims)
 
         # Call the callback function on authentication
         if callable(self.callback):
