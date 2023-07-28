@@ -22,7 +22,7 @@ async def on_auth(user: User):
     # the database and create if not exists
     db: Session = next(get_db())
     query = db.query(UserModel)
-    if not query.filter_by(identity=user.identity).first():
+    if user.identity and not query.filter_by(identity=user.identity).first():
         UserModel(**{
             "identity": user.get("identity"),
             "username": user.get("username"),
