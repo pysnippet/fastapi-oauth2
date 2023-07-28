@@ -16,6 +16,7 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
+from .claims import Claims
 from .client import OAuth2Client
 
 
@@ -47,6 +48,7 @@ class OAuth2Core:
     client_secret: str = None
     callback_url: Optional[str] = None
     scope: Optional[List[str]] = None
+    claims: Optional[Claims] = None
     backend: BaseOAuth2 = None
     _oauth_client: Optional[WebApplicationClient] = None
 
@@ -56,7 +58,8 @@ class OAuth2Core:
     def __init__(self, client: OAuth2Client) -> None:
         self.client_id = client.client_id
         self.client_secret = client.client_secret
-        self.scope = client.scope or self.scope
+        self.scope = client.scope
+        self.claims = client.claims
         self.provider = client.backend.name
         self.redirect_uri = client.redirect_uri
         self.backend = client.backend(OAuth2Strategy())
