@@ -6,6 +6,7 @@ from config import oauth2_config
 from database import Base
 from database import engine
 from database import get_db
+from fastapi_oauth2.middleware import Auth
 from fastapi_oauth2.middleware import OAuth2Middleware
 from fastapi_oauth2.middleware import User
 from fastapi_oauth2.router import router as oauth2_router
@@ -17,7 +18,7 @@ Base.metadata.create_all(bind=engine)
 router = APIRouter()
 
 
-async def on_auth(user: User):
+async def on_auth(auth: Auth, user: User):
     # perform a check for user existence in
     # the database and create if not exists
     db: Session = next(get_db())

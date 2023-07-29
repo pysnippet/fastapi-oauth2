@@ -124,7 +124,7 @@ class OAuth2Backend(AuthenticationBackend):
     def __init__(
             self,
             config: OAuth2Config,
-            callback: Callable[[User], Union[Awaitable[None], None]] = None,
+            callback: Callable[[Auth, User], Union[Awaitable[None], None]] = None,
     ) -> None:
         Auth.set_http(config.allow_http)
         Auth.set_secret(config.jwt_secret)
@@ -153,7 +153,7 @@ class OAuth2Backend(AuthenticationBackend):
 
         # Call the callback function on authentication
         if callable(self.callback):
-            coroutine = self.callback(user)
+            coroutine = self.callback(auth, user)
             if issubclass(type(coroutine), Awaitable):
                 await coroutine
         return auth, user
@@ -168,7 +168,7 @@ class OAuth2Middleware:
             self,
             app: ASGIApp,
             config: Union[OAuth2Config, dict],
-            callback: Callable[[User], Union[Awaitable[None], None]] = None,
+            callback: Callable[[Auth, User], Union[Awaitable[None], None]] = None,
             **kwargs,  # AuthenticationMiddleware kwargs
     ) -> None:
         """Initiates the middleware with the given configuration.
