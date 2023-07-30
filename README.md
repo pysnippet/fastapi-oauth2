@@ -14,7 +14,6 @@ the [social-core](https://github.com/python-social-auth/social-core) authenticat
 - Use multiple OAuth2 providers at the same time
     * There need to be provided a way to configure the OAuth2 for multiple providers
 - Customizable OAuth2 routes
-- Registration support
 
 ## Installation
 
