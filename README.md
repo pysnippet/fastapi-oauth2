@@ -13,9 +13,7 @@ the [social-core](https://github.com/python-social-auth/social-core) authenticat
 
 - Use multiple OAuth2 providers at the same time
     * There need to be provided a way to configure the OAuth2 for multiple providers
-- Token -> user data, user data -> token easy conversion
 - Customizable OAuth2 routes
-- Registration support
 
 ## Installation
 
@@ -43,12 +41,14 @@ middleware configuration is declared with the `OAuth2Config` and `OAuth2Client` 
 - `client_secret` - The OAuth2 client secret for the particular provider.
 - `redirect_uri` - The OAuth2 redirect URI to redirect to after success. Defaults to the base URL.
 - `scope` - The OAuth2 scope for the particular provider. Defaults to `[]`.
+- `claims` - Claims mapping for the certain provider.
 
 It is also important to mention that for the configured clients of the auth providers, the authorization URLs are
 accessible by the `/oauth2/{provider}/auth` path where the `provider` variable represents the exact value of the auth
 provider backend `name` attribute.
 
 ```python
+from fastapi_oauth2.claims import Claims
 from fastapi_oauth2.client import OAuth2Client
 from fastapi_oauth2.config import OAuth2Config
 from social_core.backends.github import GithubOAuth2
@@ -65,6 +65,10 @@ oauth2_config = OAuth2Config(
             client_secret=os.getenv("OAUTH2_CLIENT_SECRET"),
             redirect_uri="https://pysnippet.org/",
             scope=["user:email"],
+            claims=Claims(
+                picture="avatar_url",
+                identity=lambda user: "%s:%s" % (user.get("provider"), user.get("id")),
+            ),
         ),
     ]
 )

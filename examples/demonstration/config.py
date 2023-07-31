@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from social_core.backends.github import GithubOAuth2
 
+from fastapi_oauth2.claims import Claims
 from fastapi_oauth2.client import OAuth2Client
 from fastapi_oauth2.config import OAuth2Config
 
@@ -20,6 +21,10 @@ oauth2_config = OAuth2Config(
             client_secret=os.getenv("OAUTH2_CLIENT_SECRET"),
             # redirect_uri="http://127.0.0.1:8000/",
             scope=["user:email"],
+            claims=Claims(
+                picture="avatar_url",
+                identity=lambda user: "%s:%s" % (user.get("provider"), user.get("id")),
+            ),
         ),
     ]
 )

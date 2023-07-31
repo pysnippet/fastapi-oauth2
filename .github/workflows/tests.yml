@@ -32,13 +32,13 @@ jobs:
             env: py311-fastapi84
 
           - python: "3.7"
-            env: py37-fastapi99
+            env: py37-fastapi100
           - python: "3.9"
-            env: py39-fastapi99
+            env: py39-fastapi100
           - python: "3.10"
-            env: py310-fastapi99
+            env: py310-fastapi100
           - python: "3.11"
-            env: py311-fastapi99
+            env: py311-fastapi100
 
     steps:
       - uses: actions/checkout@v2

@@ -16,37 +16,39 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
+from .claims import Claims
 from .client import OAuth2Client
 
 
 class OAuth2LoginError(HTTPException):
-    """Raised when any login-related error occurs
-    (such as when user is not verified or if there was an attempt for fake login)
-    """
+    """Raised when any login-related error occurs."""
 
 
 class OAuth2Strategy(BaseStrategy):
-    def request_data(self, merge=True):
+    """Dummy strategy for using the `BaseOAuth2.user_data` method."""
+
+    def request_data(self, merge=True) -> Dict[str, Any]:
         return {}
 
-    def absolute_uri(self, path=None):
+    def absolute_uri(self, path=None) -> str:
         return path
 
-    def get_setting(self, name):
-        return None
+    def get_setting(self, name) -> Any:
+        """Mocked setting method."""
 
     @staticmethod
-    def get_json(url, method='GET', *args, **kwargs):
+    def get_json(url, method='GET', *args, **kwargs) -> httpx.Response:
         return httpx.request(method, url, *args, **kwargs)
 
 
 class OAuth2Core:
-    """Base class (mixin) for all SSO providers"""
+    """OAuth2 flow handler of a certain provider."""
 
     client_id: str = None
     client_secret: str = None
     callback_url: Optional[str] = None
     scope: Optional[List[str]] = None
+    claims: Optional[Claims] = None
     backend: BaseOAuth2 = None
     _oauth_client: Optional[WebApplicationClient] = None
 
@@ -56,8 +58,10 @@ class OAuth2Core:
     def __init__(self, client: OAuth2Client) -> None:
         self.client_id = client.client_id
         self.client_secret = client.client_secret
-        self.scope = client.scope or self.scope
+        self.scope = client.scope
+        self.claims = client.claims
         self.provider = client.backend.name
+        self.redirect_uri = client.redirect_uri
         self.backend = client.backend(OAuth2Strategy())
         self.authorization_endpoint = client.backend.AUTHORIZATION_URL
         self.token_endpoint = client.backend.ACCESS_TOKEN_URL
@@ -71,17 +75,14 @@ class OAuth2Core:
     def get_redirect_uri(self, request: Request) -> str:
         return urljoin(str(request.base_url), "/oauth2/%s/token" % self.provider)
 
-    async def get_login_url(self, request: Request) -> Any:
+    async def login_redirect(self, request: Request) -> RedirectResponse:
         redirect_uri = self.get_redirect_uri(request)
         state = "".join([random.choice(string.ascii_letters) for _ in range(32)])
-        return self.oauth_client.prepare_request_uri(
+        return RedirectResponse(str(self.oauth_client.prepare_request_uri(
             self.authorization_endpoint, redirect_uri=redirect_uri, state=state, scope=self.scope
-        )
+        )), 303)
 
-    async def login_redirect(self, request: Request) -> RedirectResponse:
-        return RedirectResponse(await self.get_login_url(request), 303)
-
-    async def get_token_data(self, request: Request) -> Optional[Dict[str, Any]]:
+    async def token_redirect(self, request: Request) -> RedirectResponse:
         if not request.query_params.get("code"):
             raise OAuth2LoginError(400, "'code' parameter was not found in callback request")
         if not request.query_params.get("state"):
@@ -108,14 +109,10 @@ class OAuth2Core:
         async with httpx.AsyncClient() as session:
             response = await session.post(token_url, headers=headers, content=content, auth=auth)
             token = self.oauth_client.parse_request_body_response(json.dumps(response.json()))
-            data = self.backend.user_data(token.get("access_token"))
+            token_data = self.standardize(self.backend.user_data(token.get("access_token")))
+            access_token = request.auth.jwt_create(token_data)
 
-        return {**data, "scope": self.scope}
-
-    async def token_redirect(self, request: Request) -> RedirectResponse:
-        token_data = await self.get_token_data(request)
-        access_token = request.auth.jwt_create(token_data)
-        response = RedirectResponse(request.base_url)
+        response = RedirectResponse(self.redirect_uri or request.base_url)
         response.set_cookie(
             "Authorization",
             value=f"Bearer {access_token}",
@@ -124,3 +121,8 @@ class OAuth2Core:
             httponly=request.auth.http,
         )
         return response
+
+    def standardize(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        data["provider"] = self.provider
+        data["scope"] = self.scope
+        return data
