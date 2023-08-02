@@ -46,9 +46,10 @@ class OAuth2Core:
 
     client_id: str = None
     client_secret: str = None
-    callback_url: Optional[str] = None
     scope: Optional[List[str]] = None
     claims: Optional[Claims] = None
+    provider: str = None
+    redirect_uri: str = None
     backend: BaseOAuth2 = None
     _oauth_client: Optional[WebApplicationClient] = None
 
