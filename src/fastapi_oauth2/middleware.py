@@ -6,7 +6,6 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -39,16 +38,15 @@ class Auth(AuthCredentials):
     scopes: List[str]
     clients: Dict[str, OAuth2Core] = {}
 
-    provider: str
-    default_provider: str = "local"
+    _provider: OAuth2Core = None
 
-    def __init__(
-            self,
-            scopes: Optional[Sequence[str]] = None,
-            provider: str = default_provider,
-    ) -> None:
-        super().__init__(scopes)
-        self.provider = provider
+    @property
+    def provider(self) -> Union[OAuth2Core, None]:
+        return self._provider
+
+    @provider.setter
+    def provider(self, identifier) -> None:
+        self._provider = self.clients.get(identifier)
 
     @classmethod
     def set_http(cls, http: bool) -> None:
@@ -145,18 +143,16 @@ class OAuth2Backend(AuthenticationBackend):
             return Auth(), User()
 
         user = User(Auth.jwt_decode(param))
-        user.update(provider=user.get("provider", Auth.default_provider))
-        auth = Auth(user.pop("scope", []), user.get("provider"))
-        client = Auth.clients.get(auth.provider)
-        claims = client.claims if client else Claims()
-        user = user.use_claims(claims)
+        auth = Auth(user.pop("scope", []))
+        auth.provider = user.get("provider")
+        claims = auth.provider.claims if auth.provider else {}
 
         # Call the callback function on authentication
         if callable(self.callback):
-            coroutine = self.callback(auth, user)
+            coroutine = self.callback(auth, user.use_claims(claims))
             if issubclass(type(coroutine), Awaitable):
                 await coroutine
-        return auth, user
+        return auth, user.use_claims(claims)
 
 
 class OAuth2Middleware:
