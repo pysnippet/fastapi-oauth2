@@ -1,8 +1,4 @@
-from typing import Any
-from typing import Callable
-from typing import Dict
 from typing import Optional
-from typing import Tuple
 from typing import Type
 
 from fastapi.security import OAuth2 as FastAPIOAuth2
@@ -12,32 +8,29 @@ from starlette.datastructures import Headers
 from starlette.requests import Request
 
 
-def use_cookies(cls: Type[FastAPIOAuth2]) -> Callable[[Tuple[Any], Dict[str, Any]], FastAPIOAuth2]:
-    """OAuth2 classes wrapped with this decorator will use cookies for the Authorization header."""
+class OAuth2Cookie(type):
+    """OAuth2 classes using this metaclass will use cookies for the Authorization header."""
 
-    def _use_cookies(*args, **kwargs) -> FastAPIOAuth2:
+    def __new__(metacls, name, bases, attrs) -> Type:
+        instance = super().__new__(metacls, name, bases, attrs)
+
         async def __call__(self: FastAPIOAuth2, request: Request) -> Optional[str]:
             authorization = request.headers.get("Authorization", request.cookies.get("Authorization"))
             if authorization:
                 request._headers = Headers({**request.headers, "Authorization": authorization})
-            return await super(cls, self).__call__(request)
+            return await instance.__base__.__call__(self, request)
 
-        cls.__call__ = __call__
-        return cls(*args, **kwargs)
-
-    return _use_cookies
+        instance.__call__ = __call__
+        return instance
 
 
-@use_cookies
-class OAuth2(FastAPIOAuth2):
+class OAuth2(FastAPIOAuth2, metaclass=OAuth2Cookie):
     """Wrapper class of the `fastapi.security.OAuth2` class."""
 
 
-@use_cookies
-class OAuth2PasswordBearer(FastAPIPasswordBearer):
+class OAuth2PasswordBearer(FastAPIPasswordBearer, metaclass=OAuth2Cookie):
     """Wrapper class of the `fastapi.security.OAuth2PasswordBearer` class."""
 
 
-@use_cookies
-class OAuth2AuthorizationCodeBearer(FastAPICodeBearer):
+class OAuth2AuthorizationCodeBearer(FastAPICodeBearer, metaclass=OAuth2Cookie):
     """Wrapper class of the `fastapi.security.OAuth2AuthorizationCodeBearer` class."""
