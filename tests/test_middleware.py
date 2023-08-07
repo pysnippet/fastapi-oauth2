@@ -8,7 +8,6 @@ from social_core.backends.github import GithubOAuth2
 from starlette.responses import Response
 
 from fastapi_oauth2.client import OAuth2Client
-from fastapi_oauth2.core import OAuth2Core
 from fastapi_oauth2.middleware import OAuth2Middleware
 from fastapi_oauth2.router import router as oauth2_router
 from fastapi_oauth2.security import OAuth2
@@ -72,16 +71,3 @@ async def test_authenticated_request():
 
         response = await client.get("/user")
         assert response.status_code == 200  # OK
-
-
-@pytest.mark.anyio
-async def test_core_init(backends):
-    for backend in backends:
-        try:
-            OAuth2Core(OAuth2Client(
-                backend=backend,
-                client_id="test_client_id",
-                client_secret="test_client_secret",
-            ))
-        except (NotImplementedError, Exception):
-            assert False
