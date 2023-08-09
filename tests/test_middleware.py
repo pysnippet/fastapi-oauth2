@@ -68,7 +68,7 @@ async def test_token_redirect():
         assert response.status_code == 400  # Bad Request
 
         response = await client.get("/oauth2/github/token?state=test&code=test")
-        assert response.status_code == 400  # Bad Request  TODO: <-- Fix: this should return 4xx status code
+        assert response.status_code == 400  # Bad Request
 
 
 @pytest.mark.anyio
