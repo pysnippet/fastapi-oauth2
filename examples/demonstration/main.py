@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from config import oauth2_config
@@ -37,4 +38,5 @@ async def on_auth(auth: Auth, user: User):
 app = FastAPI()
 app.include_router(app_router)
 app.include_router(oauth2_router)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(OAuth2Middleware, config=oauth2_config, callback=on_auth)
