@@ -3,8 +3,8 @@ from httpx import AsyncClient
 
 
 @pytest.mark.anyio
-async def test_authentication(app):
-    async with AsyncClient(app=app, base_url="http://test") as client:
+async def test_middleware_on_authentication(get_app):
+    async with AsyncClient(app=get_app(), base_url="http://test") as client:
         response = await client.get("/user")
         assert response.status_code == 403  # Forbidden
 
@@ -15,8 +15,8 @@ async def test_authentication(app):
 
 
 @pytest.mark.anyio
-async def test_logout(app):
-    async with AsyncClient(app=app, base_url="http://test") as client:
+async def test_middleware_on_logout(get_app):
+    async with AsyncClient(app=get_app(), base_url="http://test") as client:
         await client.get("/auth")  # Simulate login
 
         response = await client.get("/user")

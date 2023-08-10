@@ -38,43 +38,49 @@ def backends():
 
 
 @pytest.fixture
-def app():
-    oauth2 = OAuth2()
-    application = FastAPI()
-    app_router = APIRouter()
+def get_app():
+    def fixture_wrapper(authentication: OAuth2 = None):
+        if not authentication:
+            authentication = OAuth2()
 
-    @app_router.get("/user")
-    def user(request: Request, _: str = Depends(oauth2)):
-        return request.user
+        oauth2 = authentication
+        application = FastAPI()
+        app_router = APIRouter()
 
-    @app_router.get("/auth")
-    def auth(request: Request):
-        access_token = request.auth.jwt_create({
-            "name": "test",
-            "sub": "test",
-            "id": "test",
+        @app_router.get("/user")
+        def user(request: Request, _: str = Depends(oauth2)):
+            return request.user
+
+        @app_router.get("/auth")
+        def auth(request: Request):
+            access_token = request.auth.jwt_create({
+                "name": "test",
+                "sub": "test",
+                "id": "test",
+            })
+            response = Response()
+            response.set_cookie(
+                "Authorization",
+                value=f"Bearer {access_token}",
+                max_age=request.auth.expires,
+                expires=request.auth.expires,
+                httponly=request.auth.http,
+            )
+            return response
+
+        application.include_router(app_router)
+        application.include_router(oauth2_router)
+        application.add_middleware(OAuth2Middleware, config={
+            "allow_http": True,
+            "clients": [
+                OAuth2Client(
+                    backend=GithubOAuth2,
+                    client_id="test_id",
+                    client_secret="test_secret",
+                ),
+            ],
         })
-        response = Response()
-        response.set_cookie(
-            "Authorization",
-            value=f"Bearer {access_token}",
-            max_age=request.auth.expires,
-            expires=request.auth.expires,
-            httponly=request.auth.http,
-        )
-        return response
 
-    application.include_router(app_router)
-    application.include_router(oauth2_router)
-    application.add_middleware(OAuth2Middleware, config={
-        "allow_http": True,
-        "clients": [
-            OAuth2Client(
-                backend=GithubOAuth2,
-                client_id="test_id",
-                client_secret="test_secret",
-            ),
-        ],
-    })
+        return application
 
-    return application
+    return fixture_wrapper
