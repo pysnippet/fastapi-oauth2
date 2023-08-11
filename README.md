@@ -9,12 +9,6 @@
 FastAPI OAuth2 is a middleware-based social authentication mechanism supporting several auth providers. It depends on
 the [social-core](https://github.com/python-social-auth/social-core) authentication backends.
 
-## Features to be implemented
-
-- Use multiple OAuth2 providers at the same time
-    * There need to be provided a way to configure the OAuth2 for multiple providers
-- Customizable OAuth2 routes
-
 ## Installation
 
 ```shell
