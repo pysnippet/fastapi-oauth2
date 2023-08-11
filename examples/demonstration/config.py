@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from social_core.backends.github import GithubOAuth2
+from social_core.backends.google import GoogleOAuth2
 
 from fastapi_oauth2.claims import Claims
 from fastapi_oauth2.client import OAuth2Client
@@ -17,13 +18,21 @@ oauth2_config = OAuth2Config(
     clients=[
         OAuth2Client(
             backend=GithubOAuth2,
-            client_id=os.getenv("OAUTH2_CLIENT_ID"),
-            client_secret=os.getenv("OAUTH2_CLIENT_SECRET"),
-            # redirect_uri="http://127.0.0.1:8000/",
+            client_id=os.getenv("OAUTH2_GITHUB_CLIENT_ID"),
+            client_secret=os.getenv("OAUTH2_GITHUB_CLIENT_SECRET"),
             scope=["user:email"],
             claims=Claims(
                 picture="avatar_url",
                 identity=lambda user: "%s:%s" % (user.get("provider"), user.get("id")),
+            ),
+        ),
+        OAuth2Client(
+            backend=GoogleOAuth2,
+            client_id=os.getenv("OAUTH2_GOOGLE_CLIENT_ID"),
+            client_secret=os.getenv("OAUTH2_GOOGLE_CLIENT_SECRET"),
+            scope=["openid", "profile", "email"],
+            claims=Claims(
+                identity=lambda user: "%s:%s" % (user.get("provider"), user.get("sub")),
             ),
         ),
     ]

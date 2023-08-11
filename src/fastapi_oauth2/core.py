@@ -10,6 +10,7 @@ from urllib.parse import urljoin
 
 import httpx
 from oauthlib.oauth2 import WebApplicationClient
+from oauthlib.oauth2.rfc6749.errors import CustomOAuth2Error
 from social_core.backends.oauth import BaseOAuth2
 from social_core.strategy import BaseStrategy
 from starlette.exceptions import HTTPException
@@ -46,9 +47,10 @@ class OAuth2Core:
 
     client_id: str = None
     client_secret: str = None
-    callback_url: Optional[str] = None
     scope: Optional[List[str]] = None
     claims: Optional[Claims] = None
+    provider: str = None
+    redirect_uri: str = None
     backend: BaseOAuth2 = None
     _oauth_client: Optional[WebApplicationClient] = None
 
@@ -108,9 +110,12 @@ class OAuth2Core:
         auth = httpx.BasicAuth(self.client_id, self.client_secret)
         async with httpx.AsyncClient() as session:
             response = await session.post(token_url, headers=headers, content=content, auth=auth)
-            token = self.oauth_client.parse_request_body_response(json.dumps(response.json()))
-            token_data = self.standardize(self.backend.user_data(token.get("access_token")))
-            access_token = request.auth.jwt_create(token_data)
+            try:
+                token = self.oauth_client.parse_request_body_response(json.dumps(response.json()))
+                token_data = self.standardize(self.backend.user_data(token.get("access_token")))
+                access_token = request.auth.jwt_create(token_data)
+            except (CustomOAuth2Error, Exception) as e:
+                raise OAuth2LoginError(400, str(e))
 
         response = RedirectResponse(self.redirect_uri or request.base_url)
         response.set_cookie(

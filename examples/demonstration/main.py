@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from config import oauth2_config
@@ -24,16 +25,18 @@ async def on_auth(auth: Auth, user: User):
     db: Session = next(get_db())
     query = db.query(UserModel)
     if user.identity and not query.filter_by(identity=user.identity).first():
+        # create a local user by OAuth2 user's data if it does not exist yet
         UserModel(**{
-            "identity": user.get("identity"),
-            "username": user.get("username"),
-            "image": user.get("image"),
-            "email": user.get("email"),
-            "name": user.get("name"),
+            "identity": user.identity,  # User property
+            "username": user.get("username"),  # custom attribute
+            "name": user.display_name,  # User property
+            "image": user.picture,  # User property
+            "email": user.email,  # User property
         }).save(db)
 
 
 app = FastAPI()
 app.include_router(app_router)
 app.include_router(oauth2_router)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(OAuth2Middleware, config=oauth2_config, callback=on_auth)
