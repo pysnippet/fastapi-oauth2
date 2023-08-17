@@ -1,0 +1,11 @@
+:root {
+    --vp-c-brand: rgb(0, 148, 134);
+    --vp-c-brand-light: var(--vp-c-brand);
+    --vp-c-brand-lighter: var(--vp-c-brand);
+    --vp-c-brand-lightest: var(--vp-c-brand);
+    --vp-c-brand-dark: var(--vp-c-brand);
+    --vp-c-brand-darker: rgba(0, 148, 134, 0.8);
+
+    --vp-button-brand-bg: var(--vp-c-brand);
+    --vp-button-brand-active-bg: var(--vp-button-brand-bg);
+}
