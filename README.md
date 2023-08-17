@@ -6,8 +6,8 @@
 [![Tests](https://github.com/pysnippet/fastapi-oauth2/actions/workflows/tests.yml/badge.svg)](https://github.com/pysnippet/fastapi-oauth2/actions/workflows/tests.yml)
 [![License](https://img.shields.io/pypi/l/fastapi-oauth2.svg)](https://github.com/pysnippet/fastapi-oauth2/blob/master/LICENSE)
 
-FastAPI OAuth2 is a middleware-based social authentication mechanism supporting several auth providers. It depends on
-the [social-core](https://github.com/python-social-auth/social-core) authentication backends.
+FastAPI OAuth2 is a middleware-based social authentication mechanism supporting several identity providers. It depends
+on the [social-core](https://github.com/python-social-auth/social-core) authentication backends.
 
 ## Installation
 
