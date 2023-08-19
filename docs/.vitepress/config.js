@@ -37,13 +37,14 @@ export default {
                 items: [
                     {text: "Getting Started", link: "/integration/"},
                     {text: "Configuration", link: "/integration/configuration"},
-                    {
-                        text: "Settings",
-                        items: [
-                            {text: "Introduction", link: "/integration/settings/"},
-                            {text: "Variables", link: "/integration/settings/variables"},
-                        ],
-                    },
+                    {text: "Integration", link: "/integration/integration"},
+                    // {
+                    //     text: "Settings",
+                    //     items: [
+                    //         {text: "Introduction", link: "/integration/settings/"},
+                    //         {text: "Variables", link: "/integration/settings/variables"},
+                    //     ],
+                    // },
                 ],
             },
         ],
