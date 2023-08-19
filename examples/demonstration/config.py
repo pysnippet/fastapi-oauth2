@@ -23,7 +23,7 @@ oauth2_config = OAuth2Config(
             scope=["user:email"],
             claims=Claims(
                 picture="avatar_url",
-                identity=lambda user: "%s:%s" % (user.get("provider"), user.get("id")),
+                identity=lambda user: f"{user.provider}:{user.id}",
             ),
         ),
         OAuth2Client(
@@ -32,7 +32,7 @@ oauth2_config = OAuth2Config(
             client_secret=os.getenv("OAUTH2_GOOGLE_CLIENT_SECRET"),
             scope=["openid", "profile", "email"],
             claims=Claims(
-                identity=lambda user: "%s:%s" % (user.get("provider"), user.get("sub")),
+                identity=lambda user: f"{user.provider}:{user.sub}",
             ),
         ),
     ]
