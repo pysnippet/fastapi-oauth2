@@ -115,6 +115,8 @@ class User(BaseUser, dict):
             return item(self)
         return self.get(item, default)
 
+    __getattr__ = __getprop__
+
 
 class OAuth2Backend(AuthenticationBackend):
     """Authentication backend for AuthenticationMiddleware."""

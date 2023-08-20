@@ -54,9 +54,13 @@ def get_app():
         @app_router.get("/auth")
         def auth(request: Request):
             access_token = request.auth.jwt_create({
-                "name": "test",
-                "sub": "test",
-                "id": "test",
+                "id": 54321,
+                "followers": 80,
+                "sub": "1234567890",
+                "name": "John Doe",
+                "provider": "github",
+                "emails": ["john.doe@test.py"],
+                "image": "https://example.com/john.doe.png",
             })
             response = Response()
             response.set_cookie(
