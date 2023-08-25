@@ -65,12 +65,3 @@ app.include_router(oauth2_router)
 FastAPI's `OAuth2`, `OAuth2PasswordBearer` and `OAuth2AuthorizationCodeBearer` security models are supported, but in
 case your application uses cookies for storing the authentication tokens, you can use the same named security models
 from the `fastapi_oauth2.security` module.
-
-## Examples
-
-Working examples of all the above-described topics can be found in
-the [examples](https://github.com/pysnippet/fastapi-oauth2/tree/master/examples) and
-the [tests](https://github.com/pysnippet/fastapi-oauth2/tree/master/tests) directories of the repository. Also, feel
-free to open an [issue](https://github.com/pysnippet/fastapi-oauth2/issues/new/choose) or
-a [discussion](https://github.com/pysnippet/fastapi-oauth2/discussions/new/choose) if you have any questions not covered
-by the documentation.
