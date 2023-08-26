@@ -9,8 +9,8 @@ the documentation.
 
 ## User authentication
 
-For the basic authentication, you must already have generated the client ID and secret to configure
-your `OAuth2Middleware` with at least one client configuration.
+By following the [integration](/integration/integration) docs, for the basic authentication, you must already have
+generated the client ID and secret to configure your `OAuth2Middleware` with at least one client configuration.
 
 1. Go to the developer console or settings of your OAuth2 identity provider and generate new client credentials.
 2. Provide the [client configuration](/integration/configuration#oauth2client) with the obtained client ID and secret
@@ -27,6 +27,53 @@ contain the user information obtained from the IDP.
 ## User provisioning
 
 ## Claims mapping
+
+The `Claims` class includes permanent attributes like `display_name`, `identity`, `picture`, and `email`. It also allows
+for custom attributes. Each attribute can either be a string or a callable function that takes user data and returns a
+string. Suppose the user data obtained from IDP looks like follows, and you need to map the corresponding attributes for
+the user provisioning and other stuff.
+
+```json
+{
+  "id": 54321,
+  "sub": "1234567890",
+  "name": "John Doe",
+  "provider": "github",
+  "emails": [
+    "john.doe@test.py"
+  ],
+  "avatar_url": "https://example.com/john.doe.png"
+}
+```
+
+It looks easy for the `picture` and `display_name` attributes, but how to map `email` from `emails` or create a
+unique `identity` attribute. Well, that is where the callable functions come in handy. You can use the `lambda` function
+to map the attributes as follows.
+
+```python
+Claims(
+    picture="image",
+    display_name="avatar_url",
+    email=lambda u: u.emails[0],
+    identity=lambda u: f"{u.provider}:{u.sub}",
+)
+```
+
+::: info NOTE
+
+Not all IDPs provide the `first_name` and the `last_name` attributes already joined as in the example or the `email` as
+a list. So you are given the flexibility using transformer function to map the attributes as you want.
+
+```mermaid
+flowchart LR
+    IDPUserData("display_name string")
+    FastAPIUserData("first_name string\nlast_name string")
+    Transform[["transform into desired format"]]
+    FastAPIUserData --> Transform
+    Transform --> IDPUserData
+```
+
+:::
 
 ## CSRF protection
 
