@@ -1,3 +1,7 @@
+---
+outline: deep
+---
+
 # Tutorials
 
 This documentation section contains samples and tutorials on important topics of using the library. Look at
@@ -25,6 +29,29 @@ Once the authentication is successful, the user will be redirected to the `redir
 contain the user information obtained from the IDP.
 
 ## User provisioning
+
+User provisioning refers to the process of creating, updating, and deleting user accounts within the OAuth2 IDP and
+synchronizing that information with your FastAPI application's database. There are two approaches to user provisioning
+and both require the user claims to be mapped properly for creating a new user or updating an existing one.
+
+### Automatic provisioning
+
+After successful authentication, you can automatically create a user in your application's database using the
+information obtained from the IDP. The user creation or update can be handled at the `callback` function of the
+[middleware](/integration/integration#oauth2middleware) as it is called when authentication succeeds.
+
+### Manual provisioning
+
+After successful authentication, redirect the user to a registration form where they can complete their profile. This
+approach is useful when there missing mandatory attributes in `request.user` for creating a user in your application's
+database. You need to define a route for provisioning and provide it as `redirect_uri`, so
+the [user context](/integration/integration#user-context) will be available for usage.
+
+::: info NOTE
+In both scenarios, it is recommended to use the `identity` attribute for uniquely identifying the user from the
+database. So if the application uses or plans to use multiple IDPs, make sure to include the `provider` attribute when
+calculating the `identity` attribute.
+:::
 
 ## Claims mapping
 
@@ -78,3 +105,9 @@ flowchart LR
 ## CSRF protection
 
 ## PKCE support
+
+<style>
+.info {
+  border: 0;
+}
+</style>
