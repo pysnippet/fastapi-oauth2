@@ -43,9 +43,9 @@ also contains all attributes of the user received from a certain provider.
 ### Callback
 
 The `callback` is called with the [`Auth`](#auth-context) and [`User`](#user-context) arguments when the authentication
-succeeds. This can be used for migrating an external user into the system of the existing application. Apart from other
-OAuth2 solutions that force using their base user models, certain architectural designs, or a database from a limited
-set of choices, this kind of solution gives developers freedom.
+succeeds. This can be used for [user provisioning](/references/tutorials#user-provisioning). Apart from other OAuth2
+solutions that force using their base user models, certain architectural designs, or a database from a limited set of
+choices, this kind of solution gives developers freedom.
 
 ## Router
 
