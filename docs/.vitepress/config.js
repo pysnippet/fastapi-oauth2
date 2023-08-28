@@ -45,7 +45,7 @@ export default withMermaid({
             {
                 text: "References",
                 items: [
-                    {text: "Interface", link: "/references/"},
+                    {text: "Features", link: "/references/"},
                     {text: "Tutorials", link: "/references/tutorials"},
                 ],
             },
