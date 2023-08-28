@@ -64,3 +64,5 @@ Claims(
     identity=lambda user: f"{user.provider}:{user.id}",
 )
 ```
+
+Check out the [tutorial](/references/tutorials#claims-mapping) on claims mapping for a clearer understanding.

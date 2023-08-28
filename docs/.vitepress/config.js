@@ -1,4 +1,6 @@
-export default {
+import {withMermaid} from "vitepress-plugin-mermaid";
+
+export default withMermaid({
     title: "FastAPI OAuth2",
     description: "OAuth2 authentication with support for several identity providers",
     head: [
@@ -40,6 +42,13 @@ export default {
                     {text: "Integration", link: "/integration/integration"},
                 ],
             },
+            {
+                text: "References",
+                items: [
+                    {text: "Features", link: "/references/"},
+                    {text: "Tutorials", link: "/references/tutorials"},
+                ],
+            },
         ],
     },
-}
+})

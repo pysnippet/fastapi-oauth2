@@ -43,9 +43,9 @@ also contains all attributes of the user received from a certain provider.
 ### Callback
 
 The `callback` is called with the [`Auth`](#auth-context) and [`User`](#user-context) arguments when the authentication
-succeeds. This can be used for migrating an external user into the system of the existing application. Apart from other
-OAuth2 solutions that force using their base user models, certain architectural designs, or a database from a limited
-set of choices, this kind of solution gives developers freedom.
+succeeds. This can be used for [user provisioning](/references/tutorials#user-provisioning). Apart from other OAuth2
+solutions that force using their base user models, certain architectural designs, or a database from a limited set of
+choices, this kind of solution gives developers freedom.
 
 ## Router
 
@@ -65,12 +65,3 @@ app.include_router(oauth2_router)
 FastAPI's `OAuth2`, `OAuth2PasswordBearer` and `OAuth2AuthorizationCodeBearer` security models are supported, but in
 case your application uses cookies for storing the authentication tokens, you can use the same named security models
 from the `fastapi_oauth2.security` module.
-
-## Examples
-
-Working examples of all the above-described topics can be found in
-the [examples](https://github.com/pysnippet/fastapi-oauth2/tree/master/examples) and
-the [tests](https://github.com/pysnippet/fastapi-oauth2/tree/master/tests) directories of the repository. Also, feel
-free to open an [issue](https://github.com/pysnippet/fastapi-oauth2/issues/new/choose) or
-a [discussion](https://github.com/pysnippet/fastapi-oauth2/discussions/new/choose) if you have any questions not covered
-by the documentation.

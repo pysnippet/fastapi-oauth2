@@ -36,17 +36,8 @@ class Auth(AuthCredentials):
     expires: int
     algorithm: str
     scopes: List[str]
+    provider: OAuth2Core = None
     clients: Dict[str, OAuth2Core] = {}
-
-    _provider: OAuth2Core = None
-
-    @property
-    def provider(self) -> Union[OAuth2Core, None]:
-        return self._provider
-
-    @provider.setter
-    def provider(self, identifier) -> None:
-        self._provider = self.clients.get(identifier)
 
     @classmethod
     def set_http(cls, http: bool) -> None:
@@ -146,7 +137,7 @@ class OAuth2Backend(AuthenticationBackend):
 
         user = User(Auth.jwt_decode(param))
         auth = Auth(user.pop("scope", []))
-        auth.provider = user.get("provider")
+        auth.provider = auth.clients.get(user.get("provider"))
         claims = auth.provider.claims if auth.provider else {}
 
         # Call the callback function on authentication
