@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p>This is the current list of all users. See <a style="color: #009486;" href="/">JWT</a> content.</p>
+    <div style="padding: 8px 16px; background: #161618; border-radius: 6px;">
+        <pre style="max-width: 500px; white-space: pre-wrap;">{{ json.dumps(users, indent=4) }}</pre>
+    </div>
+{% endblock %}
