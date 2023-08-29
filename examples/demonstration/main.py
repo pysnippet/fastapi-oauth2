@@ -12,7 +12,8 @@ from fastapi_oauth2.middleware import OAuth2Middleware
 from fastapi_oauth2.middleware import User
 from fastapi_oauth2.router import router as oauth2_router
 from models import User as UserModel
-from router import router as app_router
+from router_api import router_api
+from router_ssr import router_ssr
 
 Base.metadata.create_all(bind=engine)
 
@@ -36,7 +37,8 @@ async def on_auth(auth: Auth, user: User):
 
 
 app = FastAPI()
-app.include_router(app_router)
+app.include_router(router_api)
+app.include_router(router_ssr)
 app.include_router(oauth2_router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(OAuth2Middleware, config=oauth2_config, callback=on_auth)
