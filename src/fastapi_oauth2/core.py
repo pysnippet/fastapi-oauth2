@@ -80,7 +80,11 @@ class OAuth2Core:
         redirect_uri = self.get_redirect_uri(request)
         state = "".join([random.choice(string.ascii_letters) for _ in range(32)])
         return RedirectResponse(str(self._oauth_client.prepare_request_uri(
-            self.authorization_endpoint, redirect_uri=redirect_uri, state=state, scope=self.scope
+            self.authorization_endpoint,
+            state=state,
+            scope=self.scope,
+            **request.query_params,
+            redirect_uri=redirect_uri,
         )), 303)
 
     async def token_redirect(self, request: Request) -> RedirectResponse:
@@ -89,17 +93,15 @@ class OAuth2Core:
         if not request.query_params.get("state"):
             raise OAuth2LoginError(400, "'state' parameter was not found in callback request")
 
-        url = request.url
-        scheme = "http" if request.auth.http else "https"
-        current_url = re.sub(r"^https?", scheme, str(url))
         redirect_uri = self.get_redirect_uri(request)
+        scheme = "http" if request.auth.http else "https"
+        authorization_response = re.sub(r"^https?", scheme, str(request.url))
 
         token_url, headers, content = self._oauth_client.prepare_token_request(
             self.token_endpoint,
+            **request.query_params,
             redirect_url=redirect_uri,
-            authorization_response=current_url,
-            code=request.query_params.get("code"),
-            state=request.query_params.get("state"),
+            authorization_response=authorization_response,
         )
 
         headers.update({
