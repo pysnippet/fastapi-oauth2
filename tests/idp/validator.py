@@ -2,8 +2,7 @@ from oauthlib.oauth2 import Client
 from oauthlib.oauth2 import RequestValidator
 
 
-class MyRequestValidator(RequestValidator):
-
+class TestValidator(RequestValidator):
     def validate_client_id(self, client_id, request, *args, **kwargs):
         return True
 
@@ -17,7 +16,7 @@ class MyRequestValidator(RequestValidator):
         return []
 
     def authenticate_client(self, request, *args, **kwargs):
-        request.client = Client(client_id="my_client", access_token="my_token")
+        request.client = Client(client_id="")
         return True
 
     def confirm_redirect_uri(self, client_id, code, redirect_uri, client, request, *args, **kwargs):
