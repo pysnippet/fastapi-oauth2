@@ -87,7 +87,7 @@ class OAuth2Core:
             redirect_uri=redirect_uri,
         )), 303)
 
-    async def token_redirect(self, request: Request) -> RedirectResponse:
+    async def token_redirect(self, request: Request, **httpx_client_args) -> RedirectResponse:
         if not request.query_params.get("code"):
             raise OAuth2LoginError(400, "'code' parameter was not found in callback request")
         if not request.query_params.get("state"):
@@ -109,7 +109,7 @@ class OAuth2Core:
             "Content-Type": "application/x-www-form-urlencoded",
         })
         auth = httpx.BasicAuth(self.client_id, self.client_secret)
-        async with httpx.AsyncClient() as session:
+        async with httpx.AsyncClient(**httpx_client_args) as session:
             response = await session.post(token_url, headers=headers, content=content, auth=auth)
             try:
                 self._oauth_client.parse_request_body_response(json.dumps(response.json()))
