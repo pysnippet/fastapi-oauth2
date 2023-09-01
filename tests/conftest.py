@@ -9,12 +9,14 @@ from fastapi import FastAPI
 from fastapi import Request
 from social_core.backends.github import GithubOAuth2
 from social_core.backends.oauth import BaseOAuth2
+from starlette.responses import RedirectResponse
 from starlette.responses import Response
 
 from fastapi_oauth2.client import OAuth2Client
 from fastapi_oauth2.middleware import OAuth2Middleware
-from fastapi_oauth2.router import router as oauth2_router
 from fastapi_oauth2.security import OAuth2
+from tests.idp import TestOAuth2
+from tests.idp import get_idp
 
 package_path = backends.__path__[0]
 
@@ -47,6 +49,20 @@ def get_app():
         application = FastAPI()
         app_router = APIRouter()
 
+        @app_router.get("/oauth2/{provider}/auth")
+        async def login(request: Request, provider: str):
+            return await request.auth.clients[provider].login_redirect(request)
+
+        @app_router.get("/oauth2/{provider}/token")
+        async def token(request: Request, provider: str):
+            return await request.auth.clients[provider].token_redirect(request, app=get_idp())
+
+        @app_router.get("/oauth2/logout")
+        def logout(request: Request):
+            response = RedirectResponse(request.base_url)
+            response.delete_cookie("Authorization")
+            return response
+
         @app_router.get("/user")
         def user(request: Request, _: str = Depends(oauth2)):
             return request.user
@@ -73,10 +89,15 @@ def get_app():
             return response
 
         application.include_router(app_router)
-        application.include_router(oauth2_router)
+        application.mount("", get_idp())
         application.add_middleware(OAuth2Middleware, config={
             "allow_http": True,
             "clients": [
+                OAuth2Client(
+                    backend=TestOAuth2,
+                    client_id="test_id",
+                    client_secret="test_secret",
+                ),
                 OAuth2Client(
                     backend=GithubOAuth2,
                     client_id="test_id",
