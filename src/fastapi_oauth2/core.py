@@ -79,12 +79,13 @@ class OAuth2Core:
     async def login_redirect(self, request: Request) -> RedirectResponse:
         redirect_uri = self.get_redirect_uri(request)
         state = "".join([random.choice(string.ascii_letters) for _ in range(32)])
+
+        oauth2_query_params = dict(state=state, scope=self.scope, redirect_uri=redirect_uri)
+        oauth2_query_params.update(request.query_params)
+
         return RedirectResponse(str(self._oauth_client.prepare_request_uri(
             self.authorization_endpoint,
-            state=state,
-            scope=self.scope,
-            **request.query_params,
-            redirect_uri=redirect_uri,
+            **oauth2_query_params,
         )), 303)
 
     async def token_redirect(self, request: Request, **httpx_client_args) -> RedirectResponse:
@@ -97,11 +98,12 @@ class OAuth2Core:
         scheme = "http" if request.auth.http else "https"
         authorization_response = re.sub(r"^https?", scheme, str(request.url))
 
+        oauth2_query_params = dict(redirect_url=redirect_uri, authorization_response=authorization_response)
+        oauth2_query_params.update(request.query_params)
+
         token_url, headers, content = self._oauth_client.prepare_token_request(
             self.token_endpoint,
-            **request.query_params,
-            redirect_url=redirect_uri,
-            authorization_response=authorization_response,
+            **oauth2_query_params,
         )
 
         headers.update({
