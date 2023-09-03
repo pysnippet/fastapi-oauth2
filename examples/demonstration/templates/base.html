@@ -22,7 +22,7 @@
                 Simulate Login
             </a>
             {% for provider in request.auth.clients %}
-                <a href="/oauth2/{{ provider }}/auth" style="display: flex; align-items: center;">
+                <a href="/oauth2/{{ provider }}/authorize" style="display: flex; align-items: center;">
                     <img
                             alt="{{ provider }} icon"
                             src="/static/{{ provider }}.svg"

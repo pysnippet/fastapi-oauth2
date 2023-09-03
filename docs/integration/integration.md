@@ -50,8 +50,8 @@ choices, this kind of solution gives developers freedom.
 ## Router
 
 Router defines the endpoints that are used for the authentication and logout. The authentication is done by
-the `/oauth2/{provider}/auth` endpoint and the logout is done by the `/oauth2/logout` endpoint. The `{provider}` is the
-name of the provider that is going to be used for the authentication and coincides with the `name` attribute of
+the `/oauth2/{provider}/authorize` endpoint and the logout is done by the `/oauth2/logout` endpoint. The `{provider}` is
+the name of the provider that is going to be used for the authentication and coincides with the `name` attribute of
 the `backend` provided to the certain `OAuth2Client`.
 
 ```python

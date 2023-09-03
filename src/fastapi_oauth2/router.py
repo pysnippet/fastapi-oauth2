@@ -5,7 +5,7 @@ from starlette.requests import Request
 router = APIRouter(prefix="/oauth2")
 
 
-@router.get("/{provider}/auth")
+@router.get("/{provider}/authorize")
 def authorize(request: Request, provider: str):
     if request.auth.ssr:
         return request.auth.clients[provider].authorization_redirect(request)

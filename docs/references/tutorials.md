@@ -22,7 +22,7 @@ generated the client ID and secret to configure your `OAuth2Middleware` with at 
 3. Set the `redirect_uri` of your application that you have also configured in the IDP.
 4. Add the middleware and include the router to your application as shown in the [integration](/integration/integration)
    section.
-5. Open the `/oauth2/{provider}/auth` endpoint on your browser and test the authentication flow. Check out
+5. Open the `/oauth2/{provider}/authorize` endpoint on your browser and test the authentication flow. Check out
    the [router](/integration/integration#router) for the `{provider}` variable.
 
 Once the authentication is successful, the user will be redirected to the `redirect_uri` and the `request.user` will

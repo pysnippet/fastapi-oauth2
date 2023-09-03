@@ -5,7 +5,7 @@ from httpx import AsyncClient
 @pytest.mark.anyio
 async def test_auth_redirect(get_app):
     async with AsyncClient(app=get_app(), base_url="http://test") as client:
-        response = await client.get("/oauth2/github/auth")
+        response = await client.get("/oauth2/github/authorize")
         assert response.status_code == 303  # Redirect
 
 
