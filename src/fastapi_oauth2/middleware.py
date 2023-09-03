@@ -31,6 +31,7 @@ from .core import OAuth2Core
 class Auth(AuthCredentials):
     """Extended auth credentials schema based on Starlette AuthCredentials."""
 
+    ssr: bool
     http: bool
     secret: str
     expires: int
@@ -38,6 +39,10 @@ class Auth(AuthCredentials):
     scopes: List[str]
     provider: OAuth2Core = None
     clients: Dict[str, OAuth2Core] = {}
+
+    @classmethod
+    def set_ssr(cls, ssr: bool) -> None:
+        cls.ssr = ssr
 
     @classmethod
     def set_http(cls, http: bool) -> None:
@@ -117,6 +122,7 @@ class OAuth2Backend(AuthenticationBackend):
             config: OAuth2Config,
             callback: Callable[[Auth, User], Union[Awaitable[None], None]] = None,
     ) -> None:
+        Auth.set_ssr(config.enable_ssr)
         Auth.set_http(config.allow_http)
         Auth.set_secret(config.jwt_secret)
         Auth.set_expires(config.jwt_expires)

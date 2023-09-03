@@ -6,13 +6,17 @@ router = APIRouter(prefix="/oauth2")
 
 
 @router.get("/{provider}/auth")
-async def login(request: Request, provider: str):
-    return await request.auth.clients[provider].login_redirect(request)
+def authorize(request: Request, provider: str):
+    if request.auth.ssr:
+        return request.auth.clients[provider].authorization_redirect(request)
+    return dict(url=request.auth.clients[provider].authorization_url(request))
 
 
 @router.get("/{provider}/token")
 async def token(request: Request, provider: str):
-    return await request.auth.clients[provider].token_redirect(request)
+    if request.auth.ssr:
+        return await request.auth.clients[provider].token_redirect(request)
+    return await request.auth.clients[provider].token_data(request)
 
 
 @router.get("/logout")
