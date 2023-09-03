@@ -83,7 +83,7 @@ def get_app():
             async def token(request: Request, provider: str):
                 if request.auth.ssr:
                     return await request.auth.clients[provider].token_redirect(request, app=get_idp())
-                return await request.auth.clients[provider].token_data(request)
+                return await request.auth.clients[provider].token_data(request, app=get_idp())
 
         application.include_router(app_router)
         application.include_router(oauth2_router)
