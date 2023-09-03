@@ -54,8 +54,8 @@ class OAuth2Core:
     backend: BaseOAuth2 = None
     _oauth_client: Optional[WebApplicationClient] = None
 
-    authorization_endpoint: str = None
-    token_endpoint: str = None
+    _authorization_endpoint: str = None
+    _token_endpoint: str = None
 
     def __init__(self, client: OAuth2Client) -> None:
         self.client_id = client.client_id
@@ -65,8 +65,8 @@ class OAuth2Core:
         self.provider = client.backend.name
         self.redirect_uri = client.redirect_uri
         self.backend = client.backend(OAuth2Strategy())
-        self.authorization_endpoint = client.backend.AUTHORIZATION_URL
-        self.token_endpoint = client.backend.ACCESS_TOKEN_URL
+        self._authorization_endpoint = client.backend.AUTHORIZATION_URL
+        self._token_endpoint = client.backend.ACCESS_TOKEN_URL
         self._oauth_client = WebApplicationClient(self.client_id)
 
     @property
@@ -76,19 +76,22 @@ class OAuth2Core:
     def get_redirect_uri(self, request: Request) -> str:
         return urljoin(str(request.base_url), "/oauth2/%s/token" % self.provider)
 
-    async def login_redirect(self, request: Request) -> RedirectResponse:
+    def authorization_url(self, request: Request) -> str:
         redirect_uri = self.get_redirect_uri(request)
         state = "".join([random.choice(string.ascii_letters) for _ in range(32)])
 
         oauth2_query_params = dict(state=state, scope=self.scope, redirect_uri=redirect_uri)
         oauth2_query_params.update(request.query_params)
 
-        return RedirectResponse(str(self._oauth_client.prepare_request_uri(
-            self.authorization_endpoint,
+        return str(self._oauth_client.prepare_request_uri(
+            self._authorization_endpoint,
             **oauth2_query_params,
-        )), 303)
+        ))
 
-    async def token_redirect(self, request: Request, **httpx_client_args) -> RedirectResponse:
+    def authorization_redirect(self, request: Request) -> RedirectResponse:
+        return RedirectResponse(self.authorization_url(request), 303)
+
+    async def token_data(self, request: Request, **httpx_client_args) -> dict:
         if not request.query_params.get("code"):
             raise OAuth2LoginError(400, "'code' parameter was not found in callback request")
         if not request.query_params.get("state"):
@@ -102,24 +105,22 @@ class OAuth2Core:
         oauth2_query_params.update(request.query_params)
 
         token_url, headers, content = self._oauth_client.prepare_token_request(
-            self.token_endpoint,
+            self._token_endpoint,
             **oauth2_query_params,
         )
 
-        headers.update({
-            "Accept": "application/json",
-            "Content-Type": "application/x-www-form-urlencoded",
-        })
+        headers.update({"Accept": "application/json"})
         auth = httpx.BasicAuth(self.client_id, self.client_secret)
-        async with httpx.AsyncClient(**httpx_client_args) as session:
-            response = await session.post(token_url, headers=headers, content=content, auth=auth)
+        async with httpx.AsyncClient(auth=auth, **httpx_client_args) as session:
+            response = await session.post(token_url, headers=headers, content=content)
             try:
                 self._oauth_client.parse_request_body_response(json.dumps(response.json()))
-                token_data = self.standardize(self.backend.user_data(self.access_token))
-                access_token = request.auth.jwt_create(token_data)
+                return self.standardize(self.backend.user_data(self.access_token))
             except (CustomOAuth2Error, Exception) as e:
                 raise OAuth2LoginError(400, str(e))
 
+    async def token_redirect(self, request: Request, **kwargs) -> RedirectResponse:
+        access_token = request.auth.jwt_create(await self.token_data(request, **kwargs))
         response = RedirectResponse(self.redirect_uri or request.base_url)
         response.set_cookie(
             "Authorization",
