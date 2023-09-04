@@ -52,8 +52,8 @@ class OAuth2Core:
     provider: str = None
     redirect_uri: str = None
     backend: BaseOAuth2 = None
-    _oauth_client: Optional[WebApplicationClient] = None
 
+    _oauth_client: Optional[WebApplicationClient] = None
     _authorization_endpoint: str = None
     _token_endpoint: str = None
 
