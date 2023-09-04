@@ -56,25 +56,11 @@ class Auth(AuthCredentials):
 class User(BaseUser, dict):
     """Extended user schema based on Starlette BaseUser."""
 
+    __slots__ = ("display_name", "identity", "picture", "email")
+
     @property
     def is_authenticated(self) -> bool:
         return bool(self)
-
-    @property
-    def display_name(self) -> str:
-        return self.__getprop__("display_name")
-
-    @property
-    def identity(self) -> str:
-        return self.__getprop__("identity")
-
-    @property
-    def picture(self) -> str:
-        return self.__getprop__("picture")
-
-    @property
-    def email(self) -> str:
-        return self.__getprop__("email")
 
     def use_claims(self, claims: Claims) -> "User":
         for attr, item in claims.items():
