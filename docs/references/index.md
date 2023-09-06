@@ -29,12 +29,9 @@ provided `state`, the `oauthlib` validates it and then redirects to the `redirec
 
 ## PKCE support
 
-::: tip Ticket #18
-
-PKCE support is under development and will be available in the next release. You can track the progress in
-the [#18](https://github.com/pysnippet/fastapi-oauth2/issues/18) issue.
-
-:::
+PKCE can be enabled by providing the `code_challenge` and `code_challenge_method` parameters to
+the `/oauth2/{provider}/authorize` endpoint. Then, after the authorization passes, the `code_verifier` should be
+provided to the `/oauth2/{provider}/token` endpoint to complete the authentication process.
 
 <style>
 .tip {
