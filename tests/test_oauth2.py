@@ -6,7 +6,7 @@ from jose.jwt import encode as jwt_encode
 from oauthlib.oauth2 import WebApplicationClient
 
 
-async def oauth2_basic_workflow(get_app, idp=False, ssr=True, authorize_query="", token_query="", use_header=False):
+async def oauth2_workflow(get_app, idp=False, ssr=True, authorize_query="", token_query="", use_header=False):
     async with AsyncClient(app=get_app(with_idp=idp, with_ssr=ssr), base_url="http://test") as client:
         response = await client.get("/user")
         assert response.status_code == 403  # Forbidden
@@ -24,8 +24,8 @@ async def oauth2_basic_workflow(get_app, idp=False, ssr=True, authorize_query=""
 
 @pytest.mark.anyio
 async def test_oauth2_basic_workflow(get_app):
-    await oauth2_basic_workflow(get_app, idp=True)
-    await oauth2_basic_workflow(get_app, idp=True, ssr=False, use_header=True)
+    await oauth2_workflow(get_app, idp=True)
+    await oauth2_workflow(get_app, idp=True, ssr=False, use_header=True)
 
 
 @pytest.mark.anyio
@@ -41,5 +41,5 @@ async def test_oauth2_pkce_workflow(get_app):
             aq["code_challenge_method"] = code_challenge_method
         aq = "?" + urlencode(aq)
         tq = "&" + urlencode(dict(code_verifier=code_verifier))
-        await oauth2_basic_workflow(get_app, idp=True, authorize_query=aq, token_query=tq)
-        await oauth2_basic_workflow(get_app, idp=True, ssr=False, authorize_query=aq, token_query=tq, use_header=True)
+        await oauth2_workflow(get_app, idp=True, authorize_query=aq, token_query=tq)
+        await oauth2_workflow(get_app, idp=True, ssr=False, authorize_query=aq, token_query=tq, use_header=True)
