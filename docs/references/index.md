@@ -13,12 +13,11 @@ the [documentation](https://python-social-auth.readthedocs.io/en/latest/backends
 
 ## SSR & REST APIs
 
-::: tip Ticket #19
-
-This upcoming feature is under development and will be available in the next release. You can track the progress in
-the [#19](https://github.com/pysnippet/fastapi-oauth2/issues/19) issue.
-
-:::
+It is compatible with both SSR and REST APIs. It means you can integrate it into your FastAPI templates and REST APIs.
+By default, the `enable_ssr` parameter of the primary [configuration](/integration/configuration#oauth2config) is set
+to `True`, which means that the application uses server-side rendering using Jinja2 templates and saves the access token
+in the cookies. If you want to use it in your REST APIs, you should set the `enable_ssr` parameter to `False` and save
+the access token on the client side.
 
 ## CSRF protection
 
