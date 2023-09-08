@@ -8,6 +8,7 @@ from .client import OAuth2Client
 class OAuth2Config:
     """Configuration class of the authentication middleware."""
 
+    enable_ssr: bool
     allow_http: bool
     jwt_secret: str
     jwt_expires: int
@@ -17,6 +18,7 @@ class OAuth2Config:
     def __init__(
             self,
             *,
+            enable_ssr: bool = True,
             allow_http: bool = False,
             jwt_secret: str = "",
             jwt_expires: Union[int, str] = 900,
@@ -25,6 +27,7 @@ class OAuth2Config:
     ) -> None:
         if allow_http:
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+        self.enable_ssr = enable_ssr
         self.allow_http = allow_http
         self.jwt_secret = jwt_secret
         self.jwt_expires = int(jwt_expires)

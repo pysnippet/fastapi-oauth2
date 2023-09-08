@@ -23,7 +23,6 @@ from starlette.types import Scope
 from starlette.types import Send
 
 from .claims import Claims
-from .client import OAuth2Client
 from .config import OAuth2Config
 from .core import OAuth2Core
 
@@ -31,33 +30,14 @@ from .core import OAuth2Core
 class Auth(AuthCredentials):
     """Extended auth credentials schema based on Starlette AuthCredentials."""
 
+    ssr: bool
     http: bool
     secret: str
     expires: int
     algorithm: str
     scopes: List[str]
-    provider: OAuth2Core = None
-    clients: Dict[str, OAuth2Core] = {}
-
-    @classmethod
-    def set_http(cls, http: bool) -> None:
-        cls.http = http
-
-    @classmethod
-    def set_secret(cls, secret: str) -> None:
-        cls.secret = secret
-
-    @classmethod
-    def set_expires(cls, expires: int) -> None:
-        cls.expires = expires
-
-    @classmethod
-    def set_algorithm(cls, algorithm: str) -> None:
-        cls.algorithm = algorithm
-
-    @classmethod
-    def register_client(cls, client: OAuth2Client) -> None:
-        cls.clients[client.backend.name] = OAuth2Core(client)
+    provider: OAuth2Core
+    clients: Dict[str, OAuth2Core]
 
     @classmethod
     def jwt_encode(cls, data: dict) -> str:
@@ -76,25 +56,11 @@ class Auth(AuthCredentials):
 class User(BaseUser, dict):
     """Extended user schema based on Starlette BaseUser."""
 
+    __slots__ = ("display_name", "identity", "picture", "email")
+
     @property
     def is_authenticated(self) -> bool:
         return bool(self)
-
-    @property
-    def display_name(self) -> str:
-        return self.__getprop__("display_name")
-
-    @property
-    def identity(self) -> str:
-        return self.__getprop__("identity")
-
-    @property
-    def picture(self) -> str:
-        return self.__getprop__("picture")
-
-    @property
-    def email(self) -> str:
-        return self.__getprop__("email")
 
     def use_claims(self, claims: Claims) -> "User":
         for attr, item in claims.items():
@@ -117,12 +83,15 @@ class OAuth2Backend(AuthenticationBackend):
             config: OAuth2Config,
             callback: Callable[[Auth, User], Union[Awaitable[None], None]] = None,
     ) -> None:
-        Auth.set_http(config.allow_http)
-        Auth.set_secret(config.jwt_secret)
-        Auth.set_expires(config.jwt_expires)
-        Auth.set_algorithm(config.jwt_algorithm)
-        for client in config.clients:
-            Auth.register_client(client)
+        Auth.ssr = config.enable_ssr
+        Auth.http = config.allow_http
+        Auth.secret = config.jwt_secret
+        Auth.expires = config.jwt_expires
+        Auth.algorithm = config.jwt_algorithm
+        Auth.clients = {
+            client.backend.name: OAuth2Core(client)
+            for client in config.clients
+        }
         self.callback = callback
 
     async def authenticate(self, request: Request) -> Optional[Tuple[Auth, User]]:

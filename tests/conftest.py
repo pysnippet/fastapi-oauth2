@@ -15,6 +15,8 @@ from fastapi_oauth2.client import OAuth2Client
 from fastapi_oauth2.middleware import OAuth2Middleware
 from fastapi_oauth2.router import router as oauth2_router
 from fastapi_oauth2.security import OAuth2
+from tests.idp import TestOAuth2
+from tests.idp import get_idp
 
 package_path = backends.__path__[0]
 
@@ -39,7 +41,11 @@ def backends():
 
 @pytest.fixture
 def get_app():
-    def fixture_wrapper(authentication: OAuth2 = None):
+    def fixture_wrapper(
+            authentication: OAuth2 = None,  # type of security
+            with_idp=False,  # used to test oauth2 flow
+            with_ssr=True,  # used to test oauth2 flow
+    ):
         if not authentication:
             authentication = OAuth2()
 
@@ -72,11 +78,28 @@ def get_app():
             )
             return response
 
+        if with_idp:
+            @app_router.get("/oauth2/{provider}/token")
+            async def token(request: Request, provider: str):
+                if request.auth.ssr:
+                    return await request.auth.clients[provider].token_redirect(request, app=get_idp())
+                return await request.auth.clients[provider].token_data(request, app=get_idp())
+
         application.include_router(app_router)
         application.include_router(oauth2_router)
+
+        if with_idp:
+            application.mount("", get_idp())
+
         application.add_middleware(OAuth2Middleware, config={
+            "enable_ssr": with_ssr,
             "allow_http": True,
             "clients": [
+                OAuth2Client(
+                    backend=TestOAuth2,
+                    client_id="test_id",
+                    client_secret="test_secret",
+                ),
                 OAuth2Client(
                     backend=GithubOAuth2,
                     client_id="test_id",

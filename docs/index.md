@@ -23,11 +23,14 @@ hero:
 features:
   - icon: 🛠️
     title: Free and open source
-    details: Enjoy the freedom of our OSS project, giving you full access to its source code and allowing you to contribute to its development.
+    details: Dive into our OSS initiative, which not only grants complete access to the source code but also welcomes your contributions.
   - icon: 🧩
     title: Easy to integrate
     details: Incorporate FastAPI OAuth2 into your existing projects with its straightforward integration process, saving you time.
   - icon: ⚡
     title: Compatible with FastAPI 0.68.1+
     details: The package is fully compatible with FastAPI v0.68.1 and above, ensuring smooth operation and integration with your application.
+  - icon: ⚙️
+    title: Configurable Workflows
+    details: Customize authentication processes to align perfectly with your application's specific needs, ensuring flexibility and precision.
 ---

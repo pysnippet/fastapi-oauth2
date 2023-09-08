@@ -8,6 +8,7 @@ Python's `dict` type with the same structure as these two classes.
 
 The `OAuth2Config` class is used to define the middleware configuration, and it has the following attributes:
 
+- `enable_ssr` - Whether enable server-side rendering or not. Defaults to `True`.
 - `allow_http` - Whether allow HTTP requests or not. Defaults to `False`.
 - `jwt_secret` - Secret used to sign the JWT tokens. Defaults to an empty string.
 - `jwt_expires` - JWT lifetime in seconds. Defaults to 900 (15 minutes).

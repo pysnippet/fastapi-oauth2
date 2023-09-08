@@ -22,7 +22,7 @@ generated the client ID and secret to configure your `OAuth2Middleware` with at 
 3. Set the `redirect_uri` of your application that you have also configured in the IDP.
 4. Add the middleware and include the router to your application as shown in the [integration](/integration/integration)
    section.
-5. Open the `/oauth2/{provider}/auth` endpoint on your browser and test the authentication flow. Check out
+5. Open the `/oauth2/{provider}/authorize` endpoint on your browser and test the authentication flow. Check out
    the [router](/integration/integration#router) for the `{provider}` variable.
 
 Once the authentication is successful, the user will be redirected to the `redirect_uri` and the `request.user` will
@@ -90,8 +90,6 @@ Claims(
 )
 ```
 
-::: info NOTE
-
 Not all IDPs provide the `first_name` and the `last_name` attributes already joined as in the example above, or
 the email in a list. So you are given the flexibility using transformer function to map the attributes as you want.
 
@@ -104,13 +102,19 @@ flowchart LR
     Transform --> IDPUserData
 ```
 
-:::
-
 ## User provisioning
 
 User provisioning refers to the process of creating, updating, and deleting user accounts within the OAuth2 IDP and
 synchronizing that information with your FastAPI application's database. There are two approaches to user provisioning
 and both require the user claims to be mapped properly for creating a new user or updating an existing one.
+
+::: info NOTE
+
+In both scenarios, it is recommended to use the `identity` attribute for uniquely identifying the user from the
+database. So if the application uses or plans to use multiple IDPs, make sure to include the `provider` attribute when
+calculating the `identity` attribute.
+
+:::
 
 ### Automatic provisioning
 
@@ -124,14 +128,6 @@ After successful authentication, redirect the user to a registration form where 
 approach is useful when there missing mandatory attributes in `request.user` for creating a user in your application's
 database. You need to define a route for provisioning and provide it as `redirect_uri`, so
 the [user context](/integration/integration#user-context) will be available for usage.
-
-::: info NOTE
-
-In both scenarios, it is recommended to use the `identity` attribute for uniquely identifying the user from the
-database. So if the application uses or plans to use multiple IDPs, make sure to include the `provider` attribute when
-calculating the `identity` attribute.
-
-:::
 
 <style>
 .info, .details {
