@@ -39,20 +39,20 @@ scopes required for the API endpoint.
 
 ```mermaid
 flowchart TB
-  subgraph level2["request (Starlette's Request object)"]
-    direction TB
-    subgraph level1["auth (Starlette's extended Auth Credentials)"]
+    subgraph level2["request (Starlette's Request object)"]
         direction TB
-        subgraph level0["provider (OAuth2 provider with client's credentials)"]
+        subgraph level1["auth (Starlette's extended Auth Credentials)"]
             direction TB
-            token["access_token (Access token for the specified scopes)"]
+            subgraph level0["provider (OAuth2 provider with client's credentials)"]
+                direction TB
+                token["access_token (Access token for the specified scopes)"]
+            end
         end
     end
-  end
-  style level2 fill:#00948680,color:#f6f6f7,stroke:#3c3c43;
-  style level1 fill:#2b75a080,color:#f6f6f7,stroke:#3c3c43;
-  style level0 fill:#5c837480,color:#f6f6f7,stroke:#3c3c43;
-  style token fill:#44506980,color:#f6f6f7,stroke:#3c3c43;
+    style level2 fill: #00948680, color: #f6f6f7, stroke: #3c3c43;
+    style level1 fill: #2b75a080, color: #f6f6f7, stroke: #3c3c43;
+    style level0 fill: #5c837480, color: #f6f6f7, stroke: #3c3c43;
+    style token fill: #44506980, color: #f6f6f7, stroke: #3c3c43;
 ```
 
 :::
@@ -128,6 +128,14 @@ After successful authentication, redirect the user to a registration form where 
 approach is useful when there missing mandatory attributes in `request.user` for creating a user in your application's
 database. You need to define a route for provisioning and provide it as `redirect_uri`, so
 the [user context](/integration/integration#user-context) will be available for usage.
+
+## Error handling
+
+::: info NOTE
+
+This section is under development.
+
+:::
 
 <style>
 .info, .details {
