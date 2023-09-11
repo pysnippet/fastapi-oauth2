@@ -56,6 +56,7 @@ class OAuth2Core:
     _oauth_client: Optional[WebApplicationClient] = None
     _authorization_endpoint: str = None
     _token_endpoint: str = None
+    _state: str = None
 
     def __init__(self, client: OAuth2Client) -> None:
         self.client_id = client.client_id
@@ -83,6 +84,8 @@ class OAuth2Core:
         oauth2_query_params = dict(state=state, scope=self.scope, redirect_uri=redirect_uri)
         oauth2_query_params.update(request.query_params)
 
+        self._state = oauth2_query_params.get("state")
+
         return str(self._oauth_client.prepare_request_uri(
             self._authorization_endpoint,
             **oauth2_query_params,
@@ -96,6 +99,8 @@ class OAuth2Core:
             raise OAuth2LoginError(400, "'code' parameter was not found in callback request")
         if not request.query_params.get("state"):
             raise OAuth2LoginError(400, "'state' parameter was not found in callback request")
+        if request.query_params.get("state") != self._state:
+            raise OAuth2LoginError(400, "'state' parameter does not match")
 
         redirect_uri = self.get_redirect_uri(request)
         scheme = "http" if request.auth.http else "https"
