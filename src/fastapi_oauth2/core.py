@@ -13,16 +13,12 @@ from oauthlib.oauth2 import WebApplicationClient
 from oauthlib.oauth2.rfc6749.errors import CustomOAuth2Error
 from social_core.backends.oauth import BaseOAuth2
 from social_core.strategy import BaseStrategy
-from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import RedirectResponse
 
 from .claims import Claims
 from .client import OAuth2Client
-
-
-class OAuth2LoginError(HTTPException):
-    """Raised when any login-related error occurs."""
+from .exceptions import OAuth2LoginError
 
 
 class OAuth2Strategy(BaseStrategy):
