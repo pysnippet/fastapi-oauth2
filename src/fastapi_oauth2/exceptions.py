@@ -9,9 +9,5 @@ class OAuth2AuthenticationError(OAuth2Error):
     """Raised when authentication fails."""
 
 
-class OAuth2BadCredentialsError(OAuth2Error):
-    """Raised when credentials are invalid."""
-
-
 class OAuth2InvalidRequestError(OAuth2Error):
     """Raised when request is invalid."""
