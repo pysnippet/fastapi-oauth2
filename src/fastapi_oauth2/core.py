@@ -20,7 +20,6 @@ from starlette.responses import RedirectResponse
 from .claims import Claims
 from .client import OAuth2Client
 from .exceptions import OAuth2AuthenticationError
-from .exceptions import OAuth2BadCredentialsError
 from .exceptions import OAuth2InvalidRequestError
 
 
@@ -120,10 +119,8 @@ class OAuth2Core:
                 response = await session.post(token_url, headers=headers, content=content)
                 self._oauth_client.parse_request_body_response(json.dumps(response.json()))
                 return self.standardize(self.backend.user_data(self.access_token))
-            except OAuth2Error as e:
+            except (OAuth2Error, httpx.HTTPError) as e:
                 raise OAuth2InvalidRequestError(400, str(e))
-            except httpx.HTTPError as e:
-                raise OAuth2BadCredentialsError(400, str(e))
             except (AuthException, Exception) as e:
                 raise OAuth2AuthenticationError(401, str(e))
 
