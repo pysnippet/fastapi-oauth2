@@ -131,11 +131,27 @@ the [user context](/integration/integration#user-context) will be available for 
 
 ## Error handling
 
-::: info NOTE
+The exceptions that possibly can occur when using the library are reraised as `HTTPException` with the appropriate
+status code and a message describing the actual error cause. So they can be handled in a natural way by following the
+FastAPI [docs](https://fastapi.tiangolo.com/tutorial/handling-errors/) on handling errors and using the exceptions from
+the `fastapi_oauth2.exceptions` module.
 
-This section is under development.
+```python
+from fastapi_oauth2.exceptions import OAuth2AuthenticationError
 
-:::
+@app.exception_handler(OAuth2AuthenticationError)
+async def error_handler(request: Request, exc: OAuth2AuthenticationError):
+    return RedirectResponse(url="/login", status_code=303)
+```
+
+The complete list of exceptions is the following.
+
+- `OAuth2Error` - Base exception for all errors raised by the FastAPI OAuth2 library.
+- `OAuth2AuthenticationError` - An exception is raised when the authentication fails.
+- `OAuth2InvalidRequestError` - An exception is raised when the request is invalid.
+
+The request is considered invalid when one of mandatory parameters such as `state` or `code` is missing or the request
+did not succeed.
 
 <style>
 .info, .details {
