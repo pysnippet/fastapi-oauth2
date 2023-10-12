@@ -150,8 +150,8 @@ The complete list of exceptions is the following.
 - `OAuth2AuthenticationError` - An exception is raised when the authentication fails.
 - `OAuth2InvalidRequestError` - An exception is raised when the request is invalid.
 
-The request is considered invalid when one of mandatory parameters such as `state` or `code` is missing or the request
-did not succeed.
+The request is considered invalid when one of the mandatory parameters, such as `state` or `code` is missing or the
+request fails. And the errors that occur during the OAuth steps are considered authentication errors.
 
 <style>
 .info, .details {
