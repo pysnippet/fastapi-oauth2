@@ -139,7 +139,10 @@ class OAuth2Middleware:
             config = OAuth2Config(**config)
         elif not isinstance(config, OAuth2Config):
             raise TypeError("config is not a valid type")
+        self.default_application_middleware = app
         self.auth_middleware = AuthenticationMiddleware(app, backend=OAuth2Backend(config, callback), **kwargs)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        await self.auth_middleware(scope, receive, send)
+        if scope["type"] == "http":
+            return await self.auth_middleware(scope, receive, send)
+        await self.default_application_middleware(scope, receive, send)
