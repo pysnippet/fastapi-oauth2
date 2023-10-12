@@ -10,6 +10,7 @@ from typing import Tuple
 from typing import Union
 
 from fastapi.security.utils import get_authorization_scheme_param
+from jose.exceptions import JOSEError
 from jose.jwt import decode as jwt_decode
 from jose.jwt import encode as jwt_encode
 from starlette.authentication import AuthCredentials
@@ -17,6 +18,7 @@ from starlette.authentication import AuthenticationBackend
 from starlette.authentication import BaseUser
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.requests import Request
+from starlette.responses import PlainTextResponse
 from starlette.types import ASGIApp
 from starlette.types import Receive
 from starlette.types import Scope
@@ -144,5 +146,9 @@ class OAuth2Middleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
-            return await self.auth_middleware(scope, receive, send)
+            try:
+                return await self.auth_middleware(scope, receive, send)
+            except (JOSEError, Exception) as e:
+                middleware = PlainTextResponse(str(e), status_code=401)
+                return await middleware(scope, receive, send)
         await self.default_application_middleware(scope, receive, send)
