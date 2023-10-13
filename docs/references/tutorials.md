@@ -39,20 +39,20 @@ scopes required for the API endpoint.
 
 ```mermaid
 flowchart TB
-  subgraph level2["request (Starlette's Request object)"]
-    direction TB
-    subgraph level1["auth (Starlette's extended Auth Credentials)"]
+    subgraph level2["request (Starlette's Request object)"]
         direction TB
-        subgraph level0["provider (OAuth2 provider with client's credentials)"]
+        subgraph level1["auth (Starlette's extended Auth Credentials)"]
             direction TB
-            token["access_token (Access token for the specified scopes)"]
+            subgraph level0["provider (OAuth2 provider with client's credentials)"]
+                direction TB
+                token["access_token (Access token for the specified scopes)"]
+            end
         end
     end
-  end
-  style level2 fill:#00948680,color:#f6f6f7,stroke:#3c3c43;
-  style level1 fill:#2b75a080,color:#f6f6f7,stroke:#3c3c43;
-  style level0 fill:#5c837480,color:#f6f6f7,stroke:#3c3c43;
-  style token fill:#44506980,color:#f6f6f7,stroke:#3c3c43;
+    style level2 fill: #00948680, color: #f6f6f7, stroke: #3c3c43;
+    style level1 fill: #2b75a080, color: #f6f6f7, stroke: #3c3c43;
+    style level0 fill: #5c837480, color: #f6f6f7, stroke: #3c3c43;
+    style token fill: #44506980, color: #f6f6f7, stroke: #3c3c43;
 ```
 
 :::
@@ -128,6 +128,30 @@ After successful authentication, redirect the user to a registration form where 
 approach is useful when there missing mandatory attributes in `request.user` for creating a user in your application's
 database. You need to define a route for provisioning and provide it as `redirect_uri`, so
 the [user context](/integration/integration#user-context) will be available for usage.
+
+## Error handling
+
+The exceptions that possibly can occur when using the library are reraised as `HTTPException` with the appropriate
+status code and a message describing the actual error cause. So they can be handled in a natural way by following the
+FastAPI [docs](https://fastapi.tiangolo.com/tutorial/handling-errors/) on handling errors and using the exceptions from
+the `fastapi_oauth2.exceptions` module.
+
+```python
+from fastapi_oauth2.exceptions import OAuth2AuthenticationError
+
+@app.exception_handler(OAuth2AuthenticationError)
+async def error_handler(request: Request, exc: OAuth2AuthenticationError):
+    return RedirectResponse(url="/login", status_code=303)
+```
+
+The complete list of exceptions is the following.
+
+- `OAuth2Error` - Base exception for all errors raised by the FastAPI OAuth2 library.
+- `OAuth2AuthenticationError` - An exception is raised when the authentication fails.
+- `OAuth2InvalidRequestError` - An exception is raised when the request is invalid.
+
+The request is considered invalid when one of the mandatory parameters, such as `state` or `code` is missing or the
+request fails. And the errors that occur during the OAuth steps are considered authentication errors.
 
 <style>
 .info, .details {

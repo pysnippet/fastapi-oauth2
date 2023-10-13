@@ -1,12 +1,15 @@
 from fastapi import APIRouter
 from fastapi import FastAPI
+from fastapi import Request
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
+from starlette.responses import RedirectResponse
 
 from config import oauth2_config
 from database import Base
 from database import engine
 from database import get_db
+from fastapi_oauth2.exceptions import OAuth2Error
 from fastapi_oauth2.middleware import Auth
 from fastapi_oauth2.middleware import OAuth2Middleware
 from fastapi_oauth2.middleware import User
@@ -37,6 +40,15 @@ async def on_auth(auth: Auth, user: User):
 
 
 app = FastAPI()
+
+
+# https://fastapi.tiangolo.com/tutorial/handling-errors/
+@app.exception_handler(OAuth2Error)
+async def error_handler(request: Request, e: OAuth2Error):
+    print("An error occurred in OAuth2Middleware", e)
+    return RedirectResponse(url="/", status_code=303)
+
+
 app.include_router(router_api)
 app.include_router(router_ssr)
 app.include_router(oauth2_router)
