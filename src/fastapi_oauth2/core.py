@@ -132,7 +132,8 @@ class OAuth2Core:
             value=f"Bearer {access_token}",
             max_age=request.auth.expires,
             expires=request.auth.expires,
-            httponly=request.auth.http,
+            secure=not request.auth.http,
+            httponly=True,
         )
         return response
 
