@@ -49,10 +49,6 @@ flowchart TB
             end
         end
     end
-    style level2 fill: #00948680, color: #f6f6f7, stroke: #3c3c43;
-    style level1 fill: #2b75a080, color: #f6f6f7, stroke: #3c3c43;
-    style level0 fill: #5c837480, color: #f6f6f7, stroke: #3c3c43;
-    style token fill: #44506980, color: #f6f6f7, stroke: #3c3c43;
 ```
 
 :::
@@ -156,5 +152,29 @@ request fails. And the errors that occur during the OAuth steps are considered a
 <style>
 .info, .details {
   border: 0;
+}
+
+g#level2 rect,
+g#level1 rect,
+g#level0 rect,
+g[id^="flowchart-token"] rect {
+	color: #f6f6f7 !important;
+	stroke: #3c3c43 !important;
+}
+
+g#level2 rect {
+	fill: #00948680 !important;
+}
+
+g#level1 rect {
+	fill: #2b75a080 !important;
+}
+
+g#level0 rect {
+	fill: #5c837480 !important;
+}
+
+g[id^="flowchart-token"] rect {
+	fill: #44506980 !important;
 }
 </style>
