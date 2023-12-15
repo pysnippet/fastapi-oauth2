@@ -64,8 +64,8 @@ class OAuth2Core:
         self.provider = client.backend.name
         self.redirect_uri = client.redirect_uri
         self.backend = client.backend(OAuth2Strategy())
-        self._authorization_endpoint = client.backend.AUTHORIZATION_URL
-        self._token_endpoint = client.backend.ACCESS_TOKEN_URL
+        self._authorization_endpoint = self.backend.authorization_url()
+        self._token_endpoint = self.backend.access_token_url()
         self._oauth_client = WebApplicationClient(self.client_id)
 
     @property
