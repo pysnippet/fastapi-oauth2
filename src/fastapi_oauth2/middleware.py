@@ -128,6 +128,7 @@ class OAuth2Middleware:
             app: ASGIApp,
             config: Union[OAuth2Config, dict],
             callback: Callable[[Auth, User], Union[Awaitable[None], None]] = None,
+            backend: Optional[OAuth2Backend]=None,
             **kwargs,  # AuthenticationMiddleware kwargs
     ) -> None:
         """Initiates the middleware with the given configuration.
@@ -141,7 +142,8 @@ class OAuth2Middleware:
         elif not isinstance(config, OAuth2Config):
             raise TypeError("config is not a valid type")
         self.default_application_middleware = app
-        self.auth_middleware = AuthenticationMiddleware(app, backend=OAuth2Backend(config, callback), **kwargs)
+        backend = backend or OAuth2Backend(config, callback)
+        self.auth_middleware = AuthenticationMiddleware(app, backend=backend, **kwargs)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
