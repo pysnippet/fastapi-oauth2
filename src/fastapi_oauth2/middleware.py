@@ -103,10 +103,9 @@ class OAuth2Backend(AuthenticationBackend):
         )
         scheme, param = get_authorization_scheme_param(authorization)
 
-        if not scheme or not param:
+        if (not scheme or scheme.lower() != 'bearer') or not param:
             return Auth(), User()
 
-        user = User(Auth.jwt_decode(param))
         auth = Auth(user.pop("scope", []))
         auth.provider = auth.clients.get(user.get("provider"))
         claims = auth.provider.claims if auth.provider else {}
