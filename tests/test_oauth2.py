@@ -62,3 +62,21 @@ async def test_oauth2_csrf_workflow(get_app):
             await oauth2_workflow(get_app, idp=True, ssr=False, authorize_query=aq, token_query=tq, use_header=True)
         except AssertionError:
             assert aq != tq
+
+
+@pytest.mark.anyio
+async def test_core_access_token(get_app):
+    async with AsyncClient(app=get_app(with_idp=True, with_ssr=True), base_url="http://test") as client:
+        response = await client.get("/oauth2/test/authorize")
+        authorization_endpoint = response.headers.get("location")
+        response = await client.get(authorization_endpoint)
+        token_url = response.headers.get("location")
+        query = {k: v[0] for k, v in parse_qs(urlparse(token_url).query).items()}
+        token_url = "%s?%s" % (token_url.split("?")[0], urlencode(query))
+        await client.get(token_url)
+
+        response = await client.get("/access-token")
+        assert response.content != b""
+
+        response = await client.get("/access-token")
+        assert response.content != b""

@@ -78,6 +78,10 @@ def get_app():
             )
             return response
 
+        @app_router.get("/access-token")
+        def access_token(request: Request):
+            return Response(request.auth.provider.access_token)
+
         if with_idp:
             @app_router.get("/oauth2/{provider}/token")
             async def token(request: Request, provider: str):
