@@ -107,7 +107,11 @@ class OAuth2Core:
         scheme = "http" if request.auth.http else "https"
         authorization_response = re.sub(r"^https?", scheme, str(request.url))
 
-        oauth2_query_params = dict(redirect_url=redirect_uri, authorization_response=authorization_response)
+        oauth2_query_params = dict(
+            redirect_url=redirect_uri,
+            client_secret=self.client_secret,
+            authorization_response=authorization_response,
+        )
         oauth2_query_params.update(request.query_params)
 
         token_url, headers, content = self._oauth_client.prepare_token_request(
