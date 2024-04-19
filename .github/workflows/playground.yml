@@ -18,4 +18,4 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY_ED25519 }}
           port: ${{ secrets.PORT }}
-          script: sh ~/fastapi-oauth2/examples/demonstration/deploy.sh
+          script: bash ~/fastapi-oauth2/examples/demonstration/deploy.sh
