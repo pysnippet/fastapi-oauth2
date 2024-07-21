@@ -1,5 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
+from datetime import timezone
 from typing import Any
 from typing import Awaitable
 from typing import Callable
@@ -27,6 +28,7 @@ from starlette.types import Send
 from .claims import Claims
 from .config import OAuth2Config
 from .core import OAuth2Core
+from .exceptions import OAuth2AuthenticationError
 
 
 class Auth(AuthCredentials):
@@ -51,7 +53,7 @@ class Auth(AuthCredentials):
 
     @classmethod
     def jwt_create(cls, token_data: dict) -> str:
-        expire = datetime.utcnow() + timedelta(seconds=cls.expires)
+        expire = datetime.now(timezone.utc) + timedelta(seconds=cls.expires)
         return cls.jwt_encode({**token_data, "exp": expire})
 
 
@@ -106,7 +108,11 @@ class OAuth2Backend(AuthenticationBackend):
         if not scheme or not param:
             return Auth(), User()
 
-        user = User(Auth.jwt_decode(param))
+        token_data = Auth.jwt_decode(param)
+        if token_data["exp"] and token_data["exp"] < int(datetime.now(timezone.utc).timestamp()):
+            raise OAuth2AuthenticationError(401, "Token expired")
+
+        user = User(token_data)
         auth = Auth(user.pop("scope", []))
         auth.provider = auth.clients.get(user.get("provider"))
         claims = auth.provider.claims if auth.provider else {}
