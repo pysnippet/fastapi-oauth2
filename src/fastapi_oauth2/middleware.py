@@ -109,7 +109,7 @@ class OAuth2Backend(AuthenticationBackend):
             return Auth(), User()
 
         token_data = Auth.jwt_decode(param)
-        if token_data["exp"] and token_data["exp"] < int(datetime.now(UTC).timestamp()):
+        if token_data["exp"] and token_data["exp"] < int(datetime.now(timezone.utc).timestamp()):
             raise OAuth2AuthenticationError(401, "Token expired")
 
         user = User(token_data)
