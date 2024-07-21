@@ -53,7 +53,7 @@ class Auth(AuthCredentials):
 
     @classmethod
     def jwt_create(cls, token_data: dict) -> str:
-        expire = datetime.now(UTC) + timedelta(seconds=cls.expires)
+        expire = datetime.now(timezone.utc) + timedelta(seconds=cls.expires)
         return cls.jwt_encode({**token_data, "exp": expire})
 
 
