@@ -1,6 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
-from datetime import UTC
+from datetime import timezone
 from typing import Any
 from typing import Awaitable
 from typing import Callable
