@@ -108,7 +108,10 @@ class OAuth2Backend(AuthenticationBackend):
         if not scheme or not param:
             return Auth(), User()
 
-        token_data = Auth.jwt_decode(param)
+        try:
+            token_data = Auth.jwt_decode(param)
+        except JOSEError as e:
+            raise OAuth2AuthenticationError(401, str(e))
         if token_data["exp"] and token_data["exp"] < int(datetime.now(timezone.utc).timestamp()):
             raise OAuth2AuthenticationError(401, "Token expired")
 
@@ -152,9 +155,5 @@ class OAuth2Middleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
-            try:
-                return await self.auth_middleware(scope, receive, send)
-            except (JOSEError, Exception) as e:
-                middleware = PlainTextResponse(str(e), status_code=401)
-                return await middleware(scope, receive, send)
+            return await self.auth_middleware(scope, receive, send)
         await self.default_application_middleware(scope, receive, send)
