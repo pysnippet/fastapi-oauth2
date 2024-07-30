@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient
 from fastapi.responses import JSONResponse
-from fastapi_oauth2.exceptions import OAuth2AuthenticationError
+from starlette.authentication import AuthenticationError
 
 
 @pytest.mark.anyio
@@ -81,6 +81,7 @@ async def test_middleware_reports_invalid_jwt(get_app):
         badtoken=jwt.encode({"bad": "token"}, 'badsecret', 'HS256')
         client.cookies.update(dict(Authorization=f"Bearer: {badtoken}"))
 
-        with pytest.raises(OAuth2AuthenticationError, match="401: Signature verification failed.") as ctx:
-            response = await client.get("/user")
+        response = await client.get("/user")
+        assert response.status_code == 401 # Not authenticated
+        assert response.text == "Signature verification failed."
 
