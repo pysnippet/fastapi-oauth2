@@ -19,9 +19,8 @@ from starlette.authentication import AuthenticationBackend
 from starlette.authentication import AuthenticationError
 from starlette.authentication import BaseUser
 from starlette.middleware.authentication import AuthenticationMiddleware
-from starlette.requests import Request
 from starlette.requests import HTTPConnection
-from starlette.responses import PlainTextResponse
+from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 from starlette.types import Receive
@@ -31,7 +30,6 @@ from starlette.types import Send
 from .claims import Claims
 from .config import OAuth2Config
 from .core import OAuth2Core
-from .exceptions import OAuth2AuthenticationError
 
 
 class Auth(AuthCredentials):
@@ -141,8 +139,7 @@ class OAuth2Middleware:
             app: ASGIApp,
             config: Union[OAuth2Config, dict],
             callback: Callable[[Auth, User], Union[Awaitable[None], None]] = None,
-            on_error: Callable[[HTTPConnection, AuthenticationError], Response] | None = None,
-            **kwargs,  # AuthenticationMiddleware kwargs
+            on_error: Optional[Callable[[HTTPConnection, AuthenticationError], Response]] = None,
     ) -> None:
         """Initiates the middleware with the given configuration.
 
@@ -155,13 +152,10 @@ class OAuth2Middleware:
         elif not isinstance(config, OAuth2Config):
             raise TypeError("config is not a valid type")
         self.default_application_middleware = app
-        self.auth_middleware = AuthenticationMiddleware(app, backend=OAuth2Backend(config, callback), on_error = on_error or self.on_error, **kwargs)
+        on_error = on_error or AuthenticationMiddleware.default_on_error
+        self.auth_middleware = AuthenticationMiddleware(app, backend=OAuth2Backend(config, callback), on_error=on_error)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
             return await self.auth_middleware(scope, receive, send)
         await self.default_application_middleware(scope, receive, send)
-
-    @staticmethod
-    def on_error(conn: HTTPConnection, exc: Exception) -> Response:
-        return PlainTextResponse(str(exc), status_code=401)
