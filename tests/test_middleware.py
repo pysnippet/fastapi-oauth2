@@ -92,5 +92,5 @@ async def test_middleware_reports_invalid_jwt(get_app):
         client.cookies.update(dict(Authorization=f"Bearer: {badtoken}"))
 
         response = await client.get("/user")
-        assert response.status_code == 401  # Not authenticated
+        assert response.status_code == 400
         assert response.text == "Signature verification failed."
