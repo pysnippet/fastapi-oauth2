@@ -11,8 +11,9 @@ section covers its integration into a FastAPI app.
 
 The `OAuth2Middleware` is an authentication middleware which means that its usage makes the `user` and `auth` attributes
 available in the [request](https://www.starlette.io/requests/) context. It has a mandatory argument `config` of
-[`OAuth2Config`](/integration/configuration#oauth2config) instance that has been discussed at the previous section and
-an optional argument `callback` which is a callable that is called when the authentication succeeds.
+[`OAuth2Config`](/integration/configuration#oauth2config) instance that has been discussed in the previous section and
+optional arguments `callback` and `on_error` that accept callables as values and are called when the authentication 
+succeeds and fails correspondingly.
 
 ```python
 app: FastAPI
@@ -20,10 +21,14 @@ app: FastAPI
 def on_auth_success(auth: Auth, user: User):
     """This could be async function as well."""
 
+def on_auth_error(conn: HTTPConnection, exc: Exception) -> Response:
+    return JSONResponse({"detail": str(exc)}, status_code=400)
+
 app.add_middleware(
     OAuth2Middleware,
     config=OAuth2Config(...),
     callback=on_auth_success,
+    on_error=on_auth_error,
 )
 ```
 

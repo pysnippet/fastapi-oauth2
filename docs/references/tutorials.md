@@ -140,7 +140,7 @@ async def error_handler(request: Request, exc: OAuth2AuthenticationError):
     return RedirectResponse(url="/login", status_code=303)
 ```
 
-The complete list of exceptions is the following.
+The complete list of exceptions raised by the middleware is the following.
 
 - `OAuth2Error` - Base exception for all errors raised by the FastAPI OAuth2 library.
 - `OAuth2AuthenticationError` - An exception is raised when the authentication fails.
