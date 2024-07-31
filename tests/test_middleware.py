@@ -1,7 +1,7 @@
 import pytest
-from httpx import AsyncClient
 from fastapi.responses import JSONResponse
-from starlette.authentication import AuthenticationError
+from httpx import AsyncClient
+from jose import jwt
 
 
 @pytest.mark.anyio
@@ -29,33 +29,43 @@ async def test_middleware_on_logout(get_app):
         response = await client.get("/user")
         assert response.status_code == 403  # Forbidden
 
+
 @pytest.mark.anyio
-async def test_middleware_do_not_interfer_user_errors(get_app):
-    app=get_app()
-    @app.get('/unexpected_error')
+async def test_middleware_do_not_interfere_user_errors(get_app):
+    app = get_app()
+
+    @app.get("/unexpected_error")
     def my_entry_point():
-        undefined_id # Intended code error
+        raise NameError  # Intended code error
 
     async with AsyncClient(app=app, base_url="http://test") as client:
         with pytest.raises(NameError):
             await client.get("/unexpected_error")
 
+
 @pytest.mark.anyio
 async def test_middleware_ignores_custom_exceptions(get_app):
-    class MyCustomException(Exception): pass
-    app=get_app()
-    @app.get('/custom_exception')
+    class MyCustomException(Exception):
+        pass
+
+    app = get_app()
+
+    @app.get("/custom_exception")
     def my_entry_point():
         raise MyCustomException()
 
     async with AsyncClient(app=app, base_url="http://test") as client:
-        with pytest.raises(MyCustomException): 
+        with pytest.raises(MyCustomException):
             await client.get("/custom_exception")
+
 
 @pytest.mark.anyio
 async def test_middleware_ignores_handled_custom_exceptions(get_app):
-    class MyHandledException(Exception): pass
-    app=get_app()
+    class MyHandledException(Exception):
+        pass
+
+    app = get_app()
+
     @app.exception_handler(MyHandledException)
     async def unicorn_exception_handler(request, exc):
         return JSONResponse(
@@ -63,25 +73,24 @@ async def test_middleware_ignores_handled_custom_exceptions(get_app):
             content={"details": "I am a custom Teapot!"},
         )
 
-    @app.get('/handled_exception')
+    @app.get("/handled_exception")
     def my_entry_point():
         raise MyHandledException()
 
     async with AsyncClient(app=app, base_url="http://test") as client:
         response = await client.get("/handled_exception")
-        assert response.status_code == 418 # I am a teapot!
+        assert response.status_code == 418  # I am a teapot!
         assert response.json() == {"details": "I am a custom Teapot!"}
+
 
 @pytest.mark.anyio
 async def test_middleware_reports_invalid_jwt(get_app):
     async with AsyncClient(app=get_app(with_ssr=False), base_url="http://test") as client:
         await client.get("/auth")  # Simulate login
         # Insert a bad token instead
-        from jose import jwt
-        badtoken=jwt.encode({"bad": "token"}, 'badsecret', 'HS256')
+        badtoken = jwt.encode({"bad": "token"}, "badsecret", "HS256")
         client.cookies.update(dict(Authorization=f"Bearer: {badtoken}"))
 
         response = await client.get("/user")
-        assert response.status_code == 401 # Not authenticated
+        assert response.status_code == 401  # Not authenticated
         assert response.text == "Signature verification failed."
-
