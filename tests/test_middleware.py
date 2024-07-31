@@ -86,7 +86,6 @@ async def test_middleware_ignores_handled_custom_exceptions(get_app):
 @pytest.mark.anyio
 async def test_middleware_reports_invalid_jwt(get_app):
     async with AsyncClient(app=get_app(with_ssr=False), base_url="http://test") as client:
-        await client.get("/auth")  # Simulate login
         # Insert a bad token instead
         badtoken = jwt.encode({"bad": "token"}, "badsecret", "HS256")
         client.cookies.update(dict(Authorization=f"Bearer: {badtoken}"))
