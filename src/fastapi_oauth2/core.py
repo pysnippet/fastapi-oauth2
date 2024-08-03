@@ -124,6 +124,9 @@ class OAuth2Core:
         async with httpx.AsyncClient(auth=auth, **httpx_client_args) as session:
             try:
                 response = await session.post(token_url, headers=headers, content=content)
+                if response.status_code == 401:
+                    content = re.sub(r"client_id=[^&]+", "", content)
+                    response = await session.post(token_url, headers=headers, content=content)
                 self._oauth_client.parse_request_body_response(json.dumps(response.json()))
                 return self.standardize(self.backend.user_data(self.access_token))
             except (OAuth2Error, httpx.HTTPError) as e:
