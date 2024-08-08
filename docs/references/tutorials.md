@@ -28,31 +28,6 @@ generated the client ID and secret to configure your `OAuth2Middleware` with at 
 Once the authentication is successful, the user will be redirected to the `redirect_uri` and the `request.user` will
 contain the user information obtained from the IDP.
 
-## Access token
-
-When the user is authenticated, the `request.user` will contain the user information obtained from the IDP and
-the `request.auth` will contain the authentication related information including the access token issued by the IDP. It
-can be used to perform authorized requests to the IDP's API endpoints. Just make sure the token is issued with the
-scopes required for the API endpoint.
-
-::: details `request.auth.provider.access_token`
-
-```mermaid
-flowchart TB
-    subgraph level2["request (Starlette's Request object)"]
-        direction TB
-        subgraph level1["auth (Starlette's extended Auth Credentials)"]
-            direction TB
-            subgraph level0["provider (OAuth2 provider with client's credentials)"]
-                direction TB
-                token["access_token (Access token for the specified scopes)"]
-            end
-        end
-    end
-```
-
-:::
-
 ## Claims mapping
 
 The `Claims` class includes permanent attributes like `display_name`, `identity`, `picture`, and `email`. It also allows
@@ -150,31 +125,7 @@ The request is considered invalid when one of the mandatory parameters, such as 
 request fails. And the errors that occur during the OAuth steps are considered authentication errors.
 
 <style>
-.info, .details {
+.info {
   border: 0;
-}
-
-g#level2 rect,
-g#level1 rect,
-g#level0 rect,
-g[id^="flowchart-token"] rect {
-	color: #f6f6f7 !important;
-	stroke: #3c3c43 !important;
-}
-
-g#level2 rect {
-	fill: #00948680 !important;
-}
-
-g#level1 rect {
-	fill: #2b75a080 !important;
-}
-
-g#level0 rect {
-	fill: #5c837480 !important;
-}
-
-g[id^="flowchart-token"] rect {
-	fill: #44506980 !important;
 }
 </style>

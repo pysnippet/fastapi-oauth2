@@ -54,7 +54,6 @@ class OAuth2Core:
     _oauth_client: Optional[WebApplicationClient] = None
     _authorization_endpoint: str = None
     _token_endpoint: str = None
-    _access_token: str = None
     _state: str = None
 
     def __init__(self, client: OAuth2Client) -> None:
@@ -71,9 +70,7 @@ class OAuth2Core:
 
     @property
     def access_token(self) -> str:
-        if not self._access_token:
-            self._access_token = self._oauth_client.access_token
-        return self._access_token
+        return self._oauth_client.access_token
 
     def get_redirect_uri(self, request: Request) -> str:
         return urljoin(str(request.base_url), "/oauth2/%s/token" % self.provider)
@@ -124,6 +121,9 @@ class OAuth2Core:
         async with httpx.AsyncClient(auth=auth, **httpx_client_args) as session:
             try:
                 response = await session.post(token_url, headers=headers, content=content)
+                if response.status_code == 401:
+                    content = re.sub(r"client_id=[^&]+", "", content)
+                    response = await session.post(token_url, headers=headers, content=content)
                 self._oauth_client.parse_request_body_response(json.dumps(response.json()))
                 return self.standardize(self.backend.user_data(self.access_token))
             except (OAuth2Error, httpx.HTTPError) as e:
