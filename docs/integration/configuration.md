@@ -51,6 +51,15 @@ OAuth2Client(
 )
 ```
 
+Sometime, a `backend` needs settings. You can define them by enrironment variable (host OS, Docker, .env file, ...)
+
+Syntax is : `SOCIAL_AUTH_<BACKEND_NAME>_<VARIABLE_NAME>`
+
+```bash
+# Example: Set API_VERSION to 20.0 for "facebook-app" backend 
+SOCIAL_AUTH_FACEBOOK_APP_API_VERSION=20.0
+```
+
 ## Claims
 
 The `Claims` class is used to define the claim mapping for a given OAuth2 client, and it has `display_name`, `identity`,
