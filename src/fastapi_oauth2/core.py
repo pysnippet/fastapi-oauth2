@@ -35,7 +35,10 @@ class OAuth2Strategy(BaseStrategy):
 
     def get_setting(self, name) -> Any:
         """ settings from environment """
-        return os.getenv(name, '')
+        value = os.getenv(name)
+        if value == None:
+            raise KeyError
+        return value
 
     @staticmethod
     def get_json(url, method='GET', *args, **kwargs) -> httpx.Response:
