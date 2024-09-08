@@ -18,10 +18,6 @@ async def test_core_init_with_all_backends(backends):
 
     for backend in backends:
         try:
-            # Vend backend 
-            if backend.__name__ == 'VendOAuth2': 
-                continue # malformed backend
-            
             OAuth2Core(OAuth2Client(
                 backend=backend,
                 client_id="test_client_id",
