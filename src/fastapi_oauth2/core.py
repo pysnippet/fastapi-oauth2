@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import re
 import string
@@ -33,7 +34,10 @@ class OAuth2Strategy(BaseStrategy):
         return path
 
     def get_setting(self, name) -> Any:
-        """Mocked setting method."""
+        value = os.getenv(name)
+        if value is None:
+            raise KeyError
+        return value
 
     @staticmethod
     def get_json(url, method='GET', *args, **kwargs) -> httpx.Response:
@@ -64,8 +68,8 @@ class OAuth2Core:
         self.provider = client.backend.name
         self.redirect_uri = client.redirect_uri
         self.backend = client.backend(OAuth2Strategy())
-        self._authorization_endpoint = client.backend.AUTHORIZATION_URL
-        self._token_endpoint = client.backend.ACCESS_TOKEN_URL
+        self._authorization_endpoint = client.backend.AUTHORIZATION_URL or self.backend.authorization_url()
+        self._token_endpoint = client.backend.ACCESS_TOKEN_URL or self.backend.access_token_url()
         self._oauth_client = WebApplicationClient(self.client_id)
 
     @property
