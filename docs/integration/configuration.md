@@ -51,13 +51,26 @@ OAuth2Client(
 )
 ```
 
-Sometime, a `backend` needs settings. You can define them by enrironment variable (host OS, Docker, .env file, ...)
+## Backends
 
-Syntax is : `SOCIAL_AUTH_<BACKEND_NAME>_<VARIABLE_NAME>`
+If endpoints of a backend need to use `authorization_url` and `access_token_url`, then please ensure
+`AUTHORIZATION_URL` and `ACCESS_TOKEN_URL` are set to `None` or at least empty strings so they can be called
+alternatively.
 
-```bash
-# Example: Set API_VERSION to 20.0 for "facebook-app" backend 
-SOCIAL_AUTH_FACEBOOK_APP_API_VERSION=20.0
+```python
+from social_core.backends import facebook
+
+
+class FacebookOAuth2(facebook.FacebookOAuth2):
+    AUTHORIZATION_URL = None
+    ACCESS_TOKEN_URL = None
+    USER_DATA_URL = "https://graph.facebook.com/v18.0/me"
+
+    def authorization_url(self):
+        return "https://www.facebook.com/v18.0/dialog/oauth"
+
+    def access_token_url(self):
+        return "https://graph.facebook.com/v18.0/oauth/access_token"
 ```
 
 ## Claims
