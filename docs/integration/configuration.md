@@ -10,6 +10,9 @@ The `OAuth2Config` class is used to define the middleware configuration, and it 
 
 - `enable_ssr` - Whether enable server-side rendering or not. Defaults to `True`.
 - `allow_http` - Whether allow HTTP requests or not. Defaults to `False`.
+- `same_site` -
+  The [SameSite](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) attribute
+  of the session cookie. Defaults to `lax`.
 - `jwt_secret` - Secret used to sign the JWT tokens. Defaults to an empty string.
 - `jwt_expires` - JWT lifetime in seconds. Defaults to 900 (15 minutes).
 - `jwt_algorithm` - The algorithm used to sign the JWT tokens. Defaults to `HS256`.
