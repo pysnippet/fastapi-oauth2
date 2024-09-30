@@ -75,7 +75,7 @@ def get_app():
                 max_age=request.auth.expires,
                 expires=request.auth.expires,
                 httponly=request.auth.http,
-                samesite=request.auth.samesite,
+                samesite=request.auth.same_site,
             )
             return response
 

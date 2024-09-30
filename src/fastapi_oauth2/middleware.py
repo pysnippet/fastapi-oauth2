@@ -37,9 +37,9 @@ class Auth(AuthCredentials):
 
     ssr: bool
     http: bool
-    samesite: str
     secret: str
     expires: int
+    same_site: str
     algorithm: str
     scopes: List[str]
     provider: OAuth2Core
@@ -91,9 +91,9 @@ class OAuth2Backend(AuthenticationBackend):
     ) -> None:
         Auth.ssr = config.enable_ssr
         Auth.http = config.allow_http
-        Auth.samesite = config.samesite
         Auth.secret = config.jwt_secret
         Auth.expires = config.jwt_expires
+        Auth.same_site = config.same_site
         Auth.algorithm = config.jwt_algorithm
         Auth.clients = {
             client.backend.name: OAuth2Core(client)
