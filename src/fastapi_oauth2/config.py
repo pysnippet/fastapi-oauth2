@@ -10,6 +10,7 @@ class OAuth2Config:
 
     enable_ssr: bool
     allow_http: bool
+    samesite: str
     jwt_secret: str
     jwt_expires: int
     jwt_algorithm: str
@@ -20,6 +21,7 @@ class OAuth2Config:
             *,
             enable_ssr: bool = True,
             allow_http: bool = False,
+            samesite: str = "lax",
             jwt_secret: str = "",
             jwt_expires: Union[int, str] = 900,
             jwt_algorithm: str = "HS256",
@@ -29,6 +31,7 @@ class OAuth2Config:
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         self.enable_ssr = enable_ssr
         self.allow_http = allow_http
+        self.samesite = samesite
         self.jwt_secret = jwt_secret
         self.jwt_expires = int(jwt_expires)
         self.jwt_algorithm = jwt_algorithm

@@ -37,6 +37,7 @@ class Auth(AuthCredentials):
 
     ssr: bool
     http: bool
+    samesite: str
     secret: str
     expires: int
     algorithm: str
@@ -90,6 +91,7 @@ class OAuth2Backend(AuthenticationBackend):
     ) -> None:
         Auth.ssr = config.enable_ssr
         Auth.http = config.allow_http
+        Auth.samesite = config.samesite
         Auth.secret = config.jwt_secret
         Auth.expires = config.jwt_expires
         Auth.algorithm = config.jwt_algorithm
