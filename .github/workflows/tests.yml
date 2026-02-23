@@ -39,6 +39,15 @@ jobs:
           - python: "3.11"
             env: py311-fastapi100
 
+          - python: "3.10"
+            env: py310-fastapi130
+          - python: "3.11"
+            env: py311-fastapi130
+          - python: "3.12"
+            env: py312-fastapi130
+          - python: "3.13"
+            env: py313-fastapi130
+
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python }}
