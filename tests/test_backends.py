@@ -19,4 +19,5 @@ async def test_core_init_with_all_backends(backends):
                 client_secret="test_client_secret",
             ))
         except (NotImplementedError, Exception):
-            assert False
+            from social_core.backends.auth0_openidconnect import Auth0OpenIdConnectAuth
+            assert backend is Auth0OpenIdConnectAuth  # oidctest.wsweet.org doesn't support auth0
