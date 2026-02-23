@@ -11,7 +11,7 @@ from oauthlib.oauth2 import WebApplicationClient
 async def oauth2_workflow(get_app, idp=False, ssr=True, authorize_query="", token_query="", use_header=False):
     async with AsyncClient(app=get_app(with_idp=idp, with_ssr=ssr), base_url="http://test") as client:
         response = await client.get("/user")
-        assert response.status_code == 403  # Forbidden
+        assert response.status_code == 401  # Unauthorized
 
         response = await client.get("/oauth2/test/authorize" + authorize_query)  # Get authorization endpoint
         authorization_endpoint = response.headers.get("location") if ssr else response.json().get("url")
