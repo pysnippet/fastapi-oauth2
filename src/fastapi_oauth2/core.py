@@ -1,8 +1,6 @@
 import json
 import os
-import random
 import re
-import string
 from typing import Any
 from typing import Dict
 from typing import List
@@ -22,25 +20,29 @@ from .claims import Claims
 from .client import OAuth2Client
 from .exceptions import OAuth2AuthenticationError
 from .exceptions import OAuth2InvalidRequestError
+from .csrf_state import CSRFStateBackend, InMemoryStateBackend
 
 
 class OAuth2Strategy(BaseStrategy):
     """Dummy strategy for using the `BaseOAuth2.user_data` method."""
 
-    def request_data(self, merge=True) -> Dict[str, Any]:
+    @staticmethod
+    def request_data(merge=True) -> Dict[str, Any]:
         return {}
 
-    def absolute_uri(self, path=None) -> str:
+    @staticmethod
+    def absolute_uri(path=None) -> str:
         return path
 
-    def get_setting(self, name) -> Any:
+    @staticmethod
+    def get_setting(name) -> Any:
         value = os.getenv(name)
         if value is None:
             raise KeyError
         return value
 
     @staticmethod
-    def get_json(url, method='GET', *args, **kwargs) -> httpx.Response:
+    def get_json(url, method="GET", *args, **kwargs) -> httpx.Response:
         return httpx.request(method, url, *args, **kwargs)
 
 
@@ -58,9 +60,8 @@ class OAuth2Core:
     _oauth_client: Optional[WebApplicationClient] = None
     _authorization_endpoint: str = None
     _token_endpoint: str = None
-    _state: str = None
 
-    def __init__(self, client: OAuth2Client) -> None:
+    def __init__(self, client: OAuth2Client, state_backend: Optional[CSRFStateBackend] = None) -> None:
         self.client_id = client.client_id
         self.client_secret = client.client_secret
         self.scope = client.scope
@@ -71,6 +72,7 @@ class OAuth2Core:
         self._authorization_endpoint = client.backend.AUTHORIZATION_URL or self.backend.authorization_url()
         self._token_endpoint = client.backend.ACCESS_TOKEN_URL or self.backend.access_token_url()
         self._oauth_client = WebApplicationClient(self.client_id)
+        self._state_backend = state_backend or InMemoryStateBackend()
 
     @property
     def access_token(self) -> str:
@@ -79,14 +81,14 @@ class OAuth2Core:
     def get_redirect_uri(self, request: Request) -> str:
         return urljoin(str(request.base_url), "/oauth2/%s/token" % self.provider)
 
-    def authorization_url(self, request: Request) -> str:
+    def authorization_url(self, request: Request, store_state: bool = True) -> str:
         redirect_uri = self.get_redirect_uri(request)
-        state = "".join([random.choice(string.ascii_letters) for _ in range(32)])
+        state = self._state_backend.generate_state(request)
+        if store_state:
+            self._state_backend.store_state(request)
 
         oauth2_query_params = dict(state=state, scope=self.scope, redirect_uri=redirect_uri)
         oauth2_query_params.update(request.query_params)
-
-        self._state = oauth2_query_params.get("state")
 
         return str(self._oauth_client.prepare_request_uri(
             self._authorization_endpoint,
@@ -94,14 +96,16 @@ class OAuth2Core:
         ))
 
     def authorization_redirect(self, request: Request) -> RedirectResponse:
-        return RedirectResponse(self.authorization_url(request), 303)
+        response = RedirectResponse(self.authorization_url(request, store_state=False), 303)
+        self._state_backend.store_state(request, response)
+        return response
 
     async def token_data(self, request: Request, **httpx_client_args) -> dict:
         if not request.query_params.get("code"):
             raise OAuth2InvalidRequestError(400, "'code' parameter was not found in callback request")
         if not request.query_params.get("state"):
             raise OAuth2InvalidRequestError(400, "'state' parameter was not found in callback request")
-        if request.query_params.get("state") != self._state:
+        if request.query_params.get("state") != self._state_backend.read_state(request):
             raise OAuth2InvalidRequestError(400, "'state' parameter does not match")
 
         redirect_uri = self.get_redirect_uri(request)
@@ -150,6 +154,7 @@ class OAuth2Core:
             httponly=True,
             samesite=request.auth.same_site,
         )
+        self._state_backend.clear_state(request, response)
         return response
 
     def standardize(self, data: Dict[str, Any]) -> Dict[str, Any]:

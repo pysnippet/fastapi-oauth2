@@ -96,7 +96,7 @@ class OAuth2Backend(AuthenticationBackend):
         Auth.same_site = config.same_site
         Auth.algorithm = config.jwt_algorithm
         Auth.clients = {
-            client.backend.name: OAuth2Core(client)
+            client.backend.name: OAuth2Core(client, state_backend=config.state_backend)
             for client in config.clients
         }
         self.callback = callback

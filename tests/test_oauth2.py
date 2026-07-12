@@ -7,6 +7,8 @@ from httpx import AsyncClient
 from jose.jwt import encode as jwt_encode
 from oauthlib.oauth2 import WebApplicationClient
 
+from fastapi_oauth2.csrf_state import CookieStateBackend
+
 
 async def oauth2_workflow(get_app, idp=False, ssr=True, authorize_query="", token_query="", use_header=False):
     async with AsyncClient(app=get_app(with_idp=idp, with_ssr=ssr), base_url="http://test") as client:
@@ -80,3 +82,29 @@ async def test_core_access_token(get_app):
 
         response = await client.get("/access-token")
         assert response.content != b""
+
+
+@pytest.mark.anyio
+async def test_oauth2_cookie_state_backend_workflow(get_app):
+    async with AsyncClient(app=get_app(with_idp=True, with_ssr=True, state_backend=CookieStateBackend()), base_url="http://test") as client:
+        response = await client.get("/oauth2/test/authorize")
+        assert response.status_code == 303  # Redirect
+        assert "CSRFState=" in response.headers.get("set-cookie", "")  # State cookie issued
+        authorization_endpoint = response.headers.get("location")
+        response = await client.get(authorization_endpoint)
+        token_url = response.headers.get("location")
+        query = {k: v[0] for k, v in parse_qs(urlparse(token_url).query).items()}
+        token_url = "%s?%s" % (token_url.split("?")[0], urlencode(query))
+        response = await client.get(token_url)
+        assert response.status_code == 307  # Redirect
+
+        response = await client.get("/user")
+        assert response.status_code == 200  # OK
+
+
+@pytest.mark.anyio
+async def test_oauth2_cookie_state_rejects_mismatch(get_app):
+    async with AsyncClient(app=get_app(with_idp=True, with_ssr=True, state_backend=CookieStateBackend()), base_url="http://test") as client:
+        await client.get("/oauth2/test/authorize")  # Issue the signed state cookie
+        response = await client.get("/oauth2/test/token?state=forged&code=whatever")
+        assert response.status_code == 400  # Bad Request

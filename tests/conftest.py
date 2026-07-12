@@ -45,6 +45,7 @@ def get_app():
             authentication: OAuth2 = None,  # type of security
             with_idp=False,  # used to test oauth2 flow
             with_ssr=True,  # used to test oauth2 flow
+            state_backend=None,  # used to test pluggable state storage
     ):
         if not authentication:
             authentication = OAuth2()
@@ -99,6 +100,7 @@ def get_app():
         application.add_middleware(OAuth2Middleware, config={
             "enable_ssr": with_ssr,
             "allow_http": True,
+            "state_backend": state_backend,
             "clients": [
                 OAuth2Client(
                     backend=TestOAuth2,

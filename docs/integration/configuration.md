@@ -17,6 +17,7 @@ The `OAuth2Config` class is used to define the middleware configuration, and it 
 - `jwt_expires` - JWT lifetime in seconds. Defaults to 900 (15 minutes).
 - `jwt_algorithm` - The algorithm used to sign the JWT tokens. Defaults to `HS256`.
 - `clients` - A list of [`OAuth2Client`](#oauth2client) instances. Defaults to an empty list.
+- `state_backend` - A [`StateBackend`](#statebackend) instance for CSRF state. Defaults to in-memory.
 
 ```python
 OAuth2Config(
@@ -92,3 +93,31 @@ Claims(
 ```
 
 Check out the [tutorial](/references/tutorials#claims-mapping) on claims mapping for a clearer understanding.
+
+## StateBackend
+
+The `state_backend` controls how the CSRF `state` is stored between the authorization redirect and the token callback.
+Two implementations are available in the `fastapi_oauth2.state` module:
+
+- `InMemoryStateBackend` - The default. Keeps the `state` in process memory. Simple, but the `state` is not shared
+  across multiple workers or processes, and it can only track one user's flow at a time, so it shouldn't be used in
+  production.
+- `CookieStateBackend` - Stores the `state` in a signed, short-lived cookie (signed with the same secret as the session
+  tokens). It requires `enable_ssr` to be `True`, since it needs a response to set and clear the cookie.
+
+```python
+from fastapi_oauth2.csrf_state import CookieStateBackend
+
+OAuth2Config(
+    ...,
+    state_backend=CookieStateBackend(),
+)
+```
+
+`CookieStateBackend` accepts the following optional arguments:
+
+- `cookie_name` - Name of the cookie that carries the signed `state`. Defaults to `CSRFState`.
+- `max_age` - Lifetime of the `state` cookie in seconds. Defaults to `600` (10 minutes).
+
+You can implement a custom backend by subclassing `StateBackend` and overriding `store_state`, `read_state`, and
+`clear_state`.

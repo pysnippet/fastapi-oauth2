@@ -23,6 +23,8 @@ jobs:
 
           - python: "3.7"
             env: py37-fastapi84
+          - python: "3.8"
+            env: py38-fastapi84
           - python: "3.9"
             env: py39-fastapi84
           - python: "3.10"
@@ -32,6 +34,8 @@ jobs:
 
           - python: "3.7"
             env: py37-fastapi100
+          - python: "3.8"
+            env: py38-fastapi100
           - python: "3.9"
             env: py39-fastapi100
           - python: "3.10"
@@ -47,6 +51,19 @@ jobs:
             env: py312-fastapi130
           - python: "3.13"
             env: py313-fastapi130
+          - python: "3.14"
+            env: py314-fastapi130
+
+          - python: "3.10"
+            env: py310-fastapi139
+          - python: "3.11"
+            env: py311-fastapi139
+          - python: "3.12"
+            env: py312-fastapi139
+          - python: "3.13"
+            env: py313-fastapi139
+          - python: "3.14"
+            env: py314-fastapi139
 
     steps:
       - uses: actions/checkout@v2
