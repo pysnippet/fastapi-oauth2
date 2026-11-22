@@ -21,7 +21,8 @@ class TestValidator(RequestValidator):
         return []
 
     def authenticate_client(self, request, *args, **kwargs):
-        request.client = Client(client_id="")
+        # oauthlib>=4 raises if the authenticated client differs from the requested client_id
+        request.client = Client(client_id=request.client_id or "")
         return True
 
     def confirm_redirect_uri(self, client_id, code, redirect_uri, client, request, *args, **kwargs):
