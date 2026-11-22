@@ -154,3 +154,19 @@ async def test_oauth2_in_memory_state_concurrent_flows(get_app):
 def test_default_state_backend_depends_on_ssr():
     assert isinstance(OAuth2Config(jwt_secret=TEST_JWT_SECRET).state_backend, CookieStateBackend)
     assert OAuth2Config(jwt_secret=TEST_JWT_SECRET, enable_ssr=False).state_backend is None  # in-memory fallback
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("state_backend", [None, InMemoryStateBackend, CookieStateBackend])
+async def test_oauth2_state_cookie_survives_strict_same_site(get_app, state_backend):
+    # A SameSite=Strict state cookie would not be sent on the cross-site redirect back from the IdP
+    app = get_app(with_idp=True, with_ssr=True, same_site="strict", state_backend=state_backend and state_backend())
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.get("/oauth2/test/authorize")
+        set_cookie = response.headers.get("set-cookie", "").lower()
+        assert "samesite=lax" in set_cookie
+        assert "samesite=strict" not in set_cookie
+
+        response = await client.get(response.headers["location"])
+        assert (await client.get(response.headers["location"])).status_code == 307
+        assert (await client.get("/user")).status_code == 200

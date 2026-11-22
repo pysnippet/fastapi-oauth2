@@ -111,6 +111,10 @@ used to log another user in (login CSRF). Two implementations are available in t
   generate its own `state` (pass it as `?state=` to `/oauth2/{provider}/authorize`), keep it, and verify it before
   sending the callback parameters to `/oauth2/{provider}/token`.
 
+The state cookies of both backends must be sent when the IdP redirects back to the application, which is a cross-site
+navigation, so they use `SameSite=Lax` when `same_site` is set to `strict`. In SSR mode, start the flow with the
+`/oauth2/{provider}/authorize` endpoint (or `authorization_redirect()`), since the state is stored on its response.
+
 ```python
 from fastapi_oauth2.csrf_state import CookieStateBackend
 

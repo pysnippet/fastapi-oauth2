@@ -10,6 +10,13 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 
+def state_cookie_samesite(request: Request) -> str:
+    """SameSite value for cookies that must survive the redirect back from the IdP.
+    A "strict" cookie is not sent on that cross-site navigation, so use "lax" instead."""
+    same_site = request.auth.same_site
+    return "lax" if not same_site or same_site.lower() == "strict" else same_site
+
+
 class CSRFStateBackend:
     @staticmethod
     def generate_state(request: Request) -> str:
@@ -65,7 +72,7 @@ class InMemoryStateBackend(CSRFStateBackend):
                 max_age=self.max_age,
                 secure=not request.auth.http,
                 httponly=True,
-                samesite=request.auth.same_site,
+                samesite=state_cookie_samesite(request),
             )
         while len(self._states) >= self.max_pending:
             self._states.popitem(last=False)
@@ -100,7 +107,10 @@ class CookieStateBackend(CSRFStateBackend):
 
     def store_state(self, request: Request, response: Optional[Response] = None) -> None:
         if not response:
-            raise RuntimeError("CookieStateBackend can only be used with SSR enabled.")
+            raise RuntimeError(
+                "CookieStateBackend needs a response to store the state: it requires enable_ssr=True "
+                "and the flow to start with authorization_redirect() rather than authorization_url()"
+            )
 
         response.set_cookie(
             self.cookie_name,
@@ -111,7 +121,7 @@ class CookieStateBackend(CSRFStateBackend):
             max_age=self.max_age,
             secure=not request.auth.http,
             httponly=True,
-            samesite=request.auth.same_site,
+            samesite=state_cookie_samesite(request),
         )
 
     def read_state(self, request: Request) -> Optional[str]:

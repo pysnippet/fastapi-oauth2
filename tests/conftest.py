@@ -48,6 +48,7 @@ def get_app():
             with_idp=False,  # used to test oauth2 flow
             with_ssr=True,  # used to test oauth2 flow
             state_backend=None,  # used to test pluggable state storage
+            same_site="lax",  # used to test the SameSite attribute of the cookies
     ):
         if not authentication:
             authentication = OAuth2()
@@ -103,6 +104,7 @@ def get_app():
             "enable_ssr": with_ssr,
             "allow_http": True,
             "jwt_secret": TEST_JWT_SECRET,
+            "same_site": same_site,
             "state_backend": state_backend,
             "clients": [
                 OAuth2Client(
