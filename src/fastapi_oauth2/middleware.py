@@ -12,6 +12,7 @@ from typing import Union
 
 from fastapi.security.utils import get_authorization_scheme_param
 from jose.exceptions import JOSEError
+from jose.exceptions import JWTError
 from jose.jwt import decode as jwt_decode
 from jose.jwt import encode as jwt_encode
 from starlette.authentication import AuthCredentials
@@ -46,12 +47,19 @@ class Auth(AuthCredentials):
     clients: Dict[str, OAuth2Core]
 
     @classmethod
+    def _get_secret(cls) -> str:
+        secret = getattr(cls, "secret", None)
+        if not secret:
+            raise JWTError("JWT secret is not configured")
+        return secret
+
+    @classmethod
     def jwt_encode(cls, data: dict) -> str:
-        return jwt_encode(data, cls.secret, algorithm=cls.algorithm)
+        return jwt_encode(data, cls._get_secret(), algorithm=cls.algorithm)
 
     @classmethod
     def jwt_decode(cls, token: str) -> dict:
-        return jwt_decode(token, cls.secret, algorithms=[cls.algorithm])
+        return jwt_decode(token, cls._get_secret(), algorithms=[cls.algorithm], options={"require_exp": True})
 
     @classmethod
     def jwt_create(cls, token_data: dict) -> str:

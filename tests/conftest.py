@@ -20,6 +20,8 @@ from tests.idp import get_idp
 
 package_path = backends.__path__[0]
 
+TEST_JWT_SECRET = "test-jwt-secret-that-is-at-least-32-bytes-long"
+
 
 @pytest.fixture
 def backends():
@@ -100,6 +102,7 @@ def get_app():
         application.add_middleware(OAuth2Middleware, config={
             "enable_ssr": with_ssr,
             "allow_http": True,
+            "jwt_secret": TEST_JWT_SECRET,
             "state_backend": state_backend,
             "clients": [
                 OAuth2Client(

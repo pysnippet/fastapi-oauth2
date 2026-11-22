@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import List
 from typing import Union
 from typing import Optional
@@ -26,12 +27,24 @@ class OAuth2Config:
             enable_ssr: bool = True,
             allow_http: bool = False,
             same_site: str = "lax",
-            jwt_secret: str = "",
+            jwt_secret: Optional[str] = None,
             jwt_expires: Union[int, str] = 900,
             jwt_algorithm: str = "HS256",
             clients: List[OAuth2Client] = None,
             state_backend: Optional[CSRFStateBackend] = None,
     ) -> None:
+        if not jwt_secret or not str(jwt_secret).strip():
+            raise ValueError(
+                "jwt_secret must be set to a non-empty, high-entropy value "
+                "(e.g. secrets.token_urlsafe(32))"
+            )
+        if jwt_algorithm.upper().startswith("HS") and len(str(jwt_secret).encode()) < 32:
+            warnings.warn(
+                "jwt_secret is shorter than 32 bytes; use a high-entropy value "
+                "(e.g. secrets.token_urlsafe(32)) for %s" % jwt_algorithm,
+                UserWarning,
+                stacklevel=2,
+            )
         if allow_http:
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         if isinstance(state_backend, CookieStateBackend) and not enable_ssr:

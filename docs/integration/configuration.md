@@ -13,7 +13,9 @@ The `OAuth2Config` class is used to define the middleware configuration, and it 
 - `same_site` -
   The [SameSite](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) attribute
   of the session cookie. Defaults to `lax`.
-- `jwt_secret` - Secret used to sign the JWT tokens. Defaults to an empty string.
+- `jwt_secret` - **Required.** Secret used to sign the JWT tokens. It must be a non-empty, high-entropy value, e.g.
+  generated with `secrets.token_urlsafe(32)`. A `ValueError` is raised if it is missing or empty, and a warning is emitted
+  if it is shorter than 32 bytes for `HS*` algorithms.
 - `jwt_expires` - JWT lifetime in seconds. Defaults to 900 (15 minutes).
 - `jwt_algorithm` - The algorithm used to sign the JWT tokens. Defaults to `HS256`.
 - `clients` - A list of [`OAuth2Client`](#oauth2client) instances. Defaults to an empty list.

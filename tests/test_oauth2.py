@@ -1,3 +1,4 @@
+import time
 from urllib.parse import parse_qs
 from urllib.parse import urlencode
 from urllib.parse import urlparse
@@ -8,6 +9,7 @@ from jose.jwt import encode as jwt_encode
 from oauthlib.oauth2 import WebApplicationClient
 
 from fastapi_oauth2.csrf_state import CookieStateBackend
+from tests.conftest import TEST_JWT_SECRET
 
 
 async def oauth2_workflow(get_app, idp=False, ssr=True, authorize_query="", token_query="", use_header=False):
@@ -25,9 +27,10 @@ async def oauth2_workflow(get_app, idp=False, ssr=True, authorize_query="", toke
         response = await client.get(token_url)  # Obtain token
 
         response = await client.get("/user", headers=dict(
-            Authorization=jwt_encode(response.json(), "")  # Set token
+            Authorization="Bearer " + jwt_encode({**response.json(), "exp": int(time.time()) + 60}, TEST_JWT_SECRET)
         ) if use_header else None)
         assert response.status_code == 200  # OK
+        assert response.json().get("provider") == "test"  # Authenticated from the verified token
 
 
 @pytest.mark.anyio
