@@ -16,6 +16,8 @@ from tests.conftest import TEST_JWT_SECRET
     {"jwt_secret": None},
     {"jwt_secret": ""},
     {"jwt_secret": "   "},
+    {"jwt_secret": b""},
+    {"jwt_secret": b"   "},
 ])
 def test_config_requires_jwt_secret(kwargs):
     with pytest.raises(ValueError):
@@ -37,6 +39,18 @@ def test_config_accepts_strong_secret():
         warnings.simplefilter("error")
         config = OAuth2Config(jwt_secret=TEST_JWT_SECRET)
     assert config.jwt_secret == TEST_JWT_SECRET
+
+
+def test_config_warns_on_short_bytes_secret():
+    with pytest.warns(UserWarning):
+        OAuth2Config(jwt_secret=b"short")
+
+
+def test_config_unset_env_values_fall_back_to_defaults():
+    # e.g. jwt_algorithm=os.getenv("JWT_ALGORITHM") when the variable is not set
+    config = OAuth2Config(jwt_secret=TEST_JWT_SECRET, jwt_algorithm=None, jwt_expires=None)
+    assert config.jwt_algorithm == "HS256"
+    assert config.jwt_expires == 900
 
 
 @pytest.mark.anyio

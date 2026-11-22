@@ -27,8 +27,10 @@ configured [`state_backend`](/integration/configuration#statebackend). After aut
 the `/oauth2/{provider}/token` callback endpoint gets called with the provided `state`, it is validated against the
 stored value and then redirects to the `redirect_uri`.
 
-By default, the `state` is kept in process memory (`InMemoryStateBackend`). For deployments running multiple workers or
-processes, use `CookieStateBackend` (or a custom backend) so the `state` is shared correctly across them.
+The `state` is bound to the browser that started the flow, so a callback URL captured by someone else cannot be replayed
+to log another user in. With `enable_ssr=True` it is kept in a signed cookie (`CookieStateBackend`) by default, which
+also works across multiple workers. With `enable_ssr=False` the server cannot bind it to the browser, so the client
+application must generate the `state`, pass it to `/oauth2/{provider}/authorize`, and verify it on return.
 
 ## PKCE support
 

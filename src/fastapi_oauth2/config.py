@@ -28,17 +28,21 @@ class OAuth2Config:
             allow_http: bool = False,
             same_site: str = "lax",
             jwt_secret: Optional[str] = None,
-            jwt_expires: Union[int, str] = 900,
-            jwt_algorithm: str = "HS256",
+            jwt_expires: Optional[Union[int, str]] = 900,
+            jwt_algorithm: Optional[str] = "HS256",
             clients: List[OAuth2Client] = None,
             state_backend: Optional[CSRFStateBackend] = None,
     ) -> None:
-        if not jwt_secret or not str(jwt_secret).strip():
+        if not jwt_secret or (isinstance(jwt_secret, (str, bytes)) and not jwt_secret.strip()):
             raise ValueError(
                 "jwt_secret must be set to a non-empty, high-entropy value "
                 "(e.g. secrets.token_urlsafe(32))"
             )
-        if jwt_algorithm.upper().startswith("HS") and len(str(jwt_secret).encode()) < 32:
+        # Unset environment variables (os.getenv) fall back to the defaults
+        jwt_algorithm = jwt_algorithm or "HS256"
+        jwt_expires = 900 if jwt_expires in (None, "") else jwt_expires
+        secret_size = len(jwt_secret if isinstance(jwt_secret, bytes) else str(jwt_secret).encode())
+        if jwt_algorithm.upper().startswith("HS") and secret_size < 32:
             warnings.warn(
                 "jwt_secret is shorter than 32 bytes; use a high-entropy value "
                 "(e.g. secrets.token_urlsafe(32)) for %s" % jwt_algorithm,
@@ -49,6 +53,9 @@ class OAuth2Config:
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         if isinstance(state_backend, CookieStateBackend) and not enable_ssr:
             raise ValueError("CookieStateBackend requires enable_ssr to be True")
+        if state_backend is None and enable_ssr:
+            # Bind the CSRF state to the browser that started the flow by default
+            state_backend = CookieStateBackend()
         self.enable_ssr = enable_ssr
         self.allow_http = allow_http
         self.same_site = same_site

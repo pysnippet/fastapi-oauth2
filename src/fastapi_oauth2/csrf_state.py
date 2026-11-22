@@ -3,10 +3,18 @@ import string
 import time
 from collections import OrderedDict
 from typing import Optional
+from typing import Tuple
 
 from jose.exceptions import JOSEError
 from starlette.requests import Request
 from starlette.responses import Response
+
+
+def state_cookie_samesite(request: Request) -> str:
+    """SameSite value for cookies that must survive the redirect back from the IdP.
+    A "strict" cookie is not sent on that cross-site navigation, so use "lax" instead."""
+    same_site = request.auth.same_site
+    return "lax" if not same_site or same_site.lower() == "strict" else same_site
 
 
 class CSRFStateBackend:
@@ -34,23 +42,55 @@ class CSRFStateBackend:
 class InMemoryStateBackend(CSRFStateBackend):
     """Tracks pending states in memory, so multiple flows can be in flight at once
     within a single process. Does not work across multiple workers/processes, so it
-    shouldn't be used in production deployments that run more than one process."""
+    shouldn't be used in production deployments that run more than one process.
 
-    def __init__(self, max_age: int = 600, max_pending: int = 1000) -> None:
+    When a response is available (SSR), every state is bound to the browser that
+    started the flow through a random binding cookie, so a callback URL captured by
+    one client cannot be replayed by another (login CSRF). Without a response
+    (non-SSR), the state cannot be bound on the server and the client application
+    is responsible for generating and verifying it."""
+
+    def __init__(
+        self,
+        max_age: int = 600,
+        max_pending: int = 1000,
+        cookie_name: str = "CSRFStateBinding",
+    ) -> None:
         self.max_age = max_age
         self.max_pending = max_pending
-        self._states: "OrderedDict[str, float]" = OrderedDict()
+        self.cookie_name = cookie_name
+        self._states: "OrderedDict[str, Tuple[float, Optional[str]]]" = OrderedDict()
 
     def store_state(self, request: Request, response: Optional[Response] = None) -> None:
+        binding = None
+        if response is not None:
+            # Reuse the browser's binding so concurrent flows (e.g. several tabs) keep working
+            binding = request.cookies.get(self.cookie_name) or secrets.token_urlsafe(32)
+            response.set_cookie(
+                self.cookie_name,
+                value=binding,
+                max_age=self.max_age,
+                secure=not request.auth.http,
+                httponly=True,
+                samesite=state_cookie_samesite(request),
+            )
         while len(self._states) >= self.max_pending:
             self._states.popitem(last=False)
-        self._states[request.state.oauth2_state] = time.time() + self.max_age
+        self._states[request.state.oauth2_state] = (time.time() + self.max_age, binding)
 
     def read_state(self, request: Request) -> Optional[str]:
         state = request.query_params.get("state")
-        if state in self._states and self._states[state] >= time.time():
-            return state
-        return None
+        entry = self._states.get(state)
+        if entry is None:
+            return None
+        expires, binding = entry
+        if expires < time.time():
+            return None
+        if binding is not None and not secrets.compare_digest(
+            binding.encode(), request.cookies.get(self.cookie_name, "").encode(),
+        ):
+            return None
+        return state
 
     def clear_state(self, request: Request, response: Response) -> None:
         self._states.pop(request.query_params.get("state"), None)
@@ -67,7 +107,10 @@ class CookieStateBackend(CSRFStateBackend):
 
     def store_state(self, request: Request, response: Optional[Response] = None) -> None:
         if not response:
-            raise RuntimeError("CookieStateBackend can only be used with SSR enabled.")
+            raise RuntimeError(
+                "CookieStateBackend needs a response to store the state: it requires enable_ssr=True "
+                "and the flow to start with authorization_redirect() rather than authorization_url()"
+            )
 
         response.set_cookie(
             self.cookie_name,
@@ -78,7 +121,7 @@ class CookieStateBackend(CSRFStateBackend):
             max_age=self.max_age,
             secure=not request.auth.http,
             httponly=True,
-            samesite=request.auth.same_site,
+            samesite=state_cookie_samesite(request),
         )
 
     def read_state(self, request: Request) -> Optional[str]:
