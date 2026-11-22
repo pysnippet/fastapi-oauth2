@@ -8,7 +8,9 @@ from httpx import AsyncClient
 from jose.jwt import encode as jwt_encode
 from oauthlib.oauth2 import WebApplicationClient
 
+from fastapi_oauth2.config import OAuth2Config
 from fastapi_oauth2.csrf_state import CookieStateBackend
+from fastapi_oauth2.csrf_state import InMemoryStateBackend
 from tests.conftest import TEST_JWT_SECRET
 
 
@@ -111,3 +113,44 @@ async def test_oauth2_cookie_state_rejects_mismatch(get_app):
         await client.get("/oauth2/test/authorize")  # Issue the signed state cookie
         response = await client.get("/oauth2/test/token?state=forged&code=whatever")
         assert response.status_code == 400  # Bad Request
+
+
+async def capture_callback_url(client):
+    response = await client.get("/oauth2/test/authorize")
+    response = await client.get(response.headers["location"])  # IdP issues a real code + state
+    return response.headers["location"]
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("state_backend", [None, InMemoryStateBackend, CookieStateBackend])
+async def test_oauth2_callback_not_replayable_by_other_browser(get_app, state_backend):
+    # GHSA-wqf2-2c92-hpvj: a callback URL captured by the attacker must not log the victim in
+    app = get_app(with_idp=True, with_ssr=True, state_backend=state_backend and state_backend())
+
+    async with AsyncClient(app=app, base_url="http://test") as attacker:
+        callback_url = await capture_callback_url(attacker)
+
+    async with AsyncClient(app=app, base_url="http://test") as victim:
+        response = await victim.get(callback_url)
+        assert response.status_code == 400  # Bad Request
+        assert "Authorization" not in response.headers.get("set-cookie", "")
+
+        response = await victim.get("/user")
+        assert response.status_code in (401, 403)  # Still unauthenticated
+
+
+@pytest.mark.anyio
+async def test_oauth2_in_memory_state_concurrent_flows(get_app):
+    app = get_app(with_idp=True, with_ssr=True, state_backend=InMemoryStateBackend())
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        first = await capture_callback_url(client)  # e.g. two tabs of the same browser
+        second = await capture_callback_url(client)
+
+        assert (await client.get(first)).status_code == 307
+        assert (await client.get(second)).status_code == 307
+        assert (await client.get("/user")).status_code == 200
+
+
+def test_default_state_backend_depends_on_ssr():
+    assert isinstance(OAuth2Config(jwt_secret=TEST_JWT_SECRET).state_backend, CookieStateBackend)
+    assert OAuth2Config(jwt_secret=TEST_JWT_SECRET, enable_ssr=False).state_backend is None  # in-memory fallback

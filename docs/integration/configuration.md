@@ -99,13 +99,17 @@ Check out the [tutorial](/references/tutorials#claims-mapping) on claims mapping
 ## StateBackend
 
 The `state_backend` controls how the CSRF `state` is stored between the authorization redirect and the token callback.
-Two implementations are available in the `fastapi_oauth2.state` module:
+The stored `state` is bound to the browser that started the flow, so a callback URL captured by someone else cannot be
+used to log another user in (login CSRF). Two implementations are available in the `fastapi_oauth2.csrf_state` module:
 
-- `InMemoryStateBackend` - The default. Keeps the `state` in process memory. Simple, but the `state` is not shared
-  across multiple workers or processes, and it can only track one user's flow at a time, so it shouldn't be used in
-  production.
-- `CookieStateBackend` - Stores the `state` in a signed, short-lived cookie (signed with the same secret as the session
-  tokens). It requires `enable_ssr` to be `True`, since it needs a response to set and clear the cookie.
+- `CookieStateBackend` - The default when `enable_ssr` is `True`. Stores the `state` in a signed, short-lived cookie
+  (signed with the same secret as the session tokens). It works across multiple workers and processes. It requires
+  `enable_ssr` to be `True`, since it needs a response to set and clear the cookie.
+- `InMemoryStateBackend` - The default when `enable_ssr` is `False`. Keeps pending `state` values in process memory, so
+  it is not shared across multiple workers or processes. With SSR, each `state` is bound to the browser through a random
+  `CSRFStateBinding` cookie. Without SSR there is no response to set that cookie on, so the client application must
+  generate its own `state` (pass it as `?state=` to `/oauth2/{provider}/authorize`), keep it, and verify it before
+  sending the callback parameters to `/oauth2/{provider}/token`.
 
 ```python
 from fastapi_oauth2.csrf_state import CookieStateBackend
@@ -121,5 +125,11 @@ OAuth2Config(
 - `cookie_name` - Name of the cookie that carries the signed `state`. Defaults to `CSRFState`.
 - `max_age` - Lifetime of the `state` cookie in seconds. Defaults to `600` (10 minutes).
 
-You can implement a custom backend by subclassing `StateBackend` and overriding `store_state`, `read_state`, and
-`clear_state`.
+`InMemoryStateBackend` accepts the following optional arguments:
+
+- `max_age` - Lifetime of a pending `state` in seconds. Defaults to `600` (10 minutes).
+- `max_pending` - Maximum number of pending `state` values kept in memory. Defaults to `1000`.
+- `cookie_name` - Name of the cookie that binds the `state` to the browser. Defaults to `CSRFStateBinding`.
+
+You can implement a custom backend by subclassing `CSRFStateBackend` and overriding `store_state`, `read_state`, and
+`clear_state`. A custom backend must bind the `state` to the client that started the flow.

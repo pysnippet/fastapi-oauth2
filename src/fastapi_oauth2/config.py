@@ -49,6 +49,9 @@ class OAuth2Config:
             os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
         if isinstance(state_backend, CookieStateBackend) and not enable_ssr:
             raise ValueError("CookieStateBackend requires enable_ssr to be True")
+        if state_backend is None and enable_ssr:
+            # Bind the CSRF state to the browser that started the flow by default
+            state_backend = CookieStateBackend()
         self.enable_ssr = enable_ssr
         self.allow_http = allow_http
         self.same_site = same_site
